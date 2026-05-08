@@ -53,10 +53,6 @@ You can then execute your native executable with: `./target/ticket_service-1.0.0
 
 If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
 
-## Related Guides
-
-- REST ([guide](https://quarkus.io/guides/rest)): Build RESTful web services and APIs using Jakarta REST (formerly JAX-RS)
-
 ## Provided Code
 
 ### REST
