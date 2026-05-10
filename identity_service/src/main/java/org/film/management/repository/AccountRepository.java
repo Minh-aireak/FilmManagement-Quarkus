@@ -5,7 +5,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import org.film.management.entity.Account;
 
 @ApplicationScoped
-// Dùng PanacheRepositoryBase vì Khóa chính (idAccount) của bạn là kiểu String
 public class AccountRepository implements PanacheRepositoryBase<Account, String> {
 
     public Account findByEmail(String email) {

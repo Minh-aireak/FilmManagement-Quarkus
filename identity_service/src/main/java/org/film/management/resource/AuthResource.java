@@ -12,6 +12,7 @@ import org.film.management.repository.AccountRepository;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Path("/auth")
@@ -22,13 +23,11 @@ public class AuthResource {
     @Inject
     AccountRepository accountRepository;
 
-    // 1. HÀM ĐĂNG NHẬP (Đã cập nhật kiểm tra Bcrypt)
     @POST
     @Path("/login")
     public Response login(LoginRequest credentials) {
         Account account = accountRepository.findByEmail(credentials.getEmail());
 
-        // SỬ DỤNG BcryptUtil.matches() ĐỂ SO SÁNH MẬT KHẨU
         if (account == null || !BcryptUtil.matches(credentials.getPassword(), account.getPassword())) {
             return Response.status(Response.Status.UNAUTHORIZED).entity("Sai email hoặc mật khẩu").build();
         }
@@ -48,10 +47,9 @@ public class AuthResource {
                 .expiresIn(3600)
                 .sign();
 
-        return Response.ok("{\"token\":\"" + token + "\"}").build();
+        return Response.ok(Map.of("token", token)).build();
     }
 
-    // 2. HÀM ĐĂNG KÝ (Tự động băm mật khẩu khi tạo user mới)
     @POST
     @Path("/register")
     @Transactional
@@ -63,27 +61,13 @@ public class AuthResource {
             String randomId = "TK_" + java.util.UUID.randomUUID().toString().substring(0, 8);
             newAccount.setIdAccount(randomId);
         }
-        // BĂM MẬT KHẨU TRƯỚC KHI LƯU VÀO DATABASE
+
         newAccount.setPassword(BcryptUtil.bcryptHash(newAccount.getPassword()));
         accountRepository.persist(newAccount);
 
-        return Response.status(Response.Status.CREATED).entity("Đăng ký thành công").build();
+        return Response.status(Response.Status.CREATED)
+                .entity(Map.of("message", "Đăng ký thành công"))
+                .build();
     }
 
-    // 3. API CHỮA CHÁY (Chạy 1 lần duy nhất để băm pass của admin & user cũ)
-//    @GET
-//    @Path("/hash-old-passwords")
-//    @Transactional
-//    public Response hashOldPasswords() {
-//        List<Account> accounts = accountRepository.listAll();
-//        int count = 0;
-//        for (Account acc : accounts) {
-//            // Chuỗi Bcrypt luôn bắt đầu bằng "$2a$" hoặc "$2b$". Nếu không phải thì mã hóa nó!
-//            if (!acc.getPassword().startsWith("$2")) {
-//                acc.setPassword(BcryptUtil.bcryptHash(acc.getPassword()));
-//                count++;
-//            }
-//        }
-//        return Response.ok("Đã mã hóa thành công " + count + " tài khoản cũ trong Database!").build();
-//    }
 }
