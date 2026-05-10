@@ -3,6 +3,7 @@ package org.film.management.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
@@ -22,6 +23,7 @@ public class Movie {
     private String language;
     private String description;
     private String image;
+    private LocalDate createdAt;
 
     @PrePersist
     public void generateId() {

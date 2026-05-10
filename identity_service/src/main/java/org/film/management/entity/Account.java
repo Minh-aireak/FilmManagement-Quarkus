@@ -1,14 +1,16 @@
 package org.film.management.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Entity
 @Table(name = "account")
 @Data
+@Setter
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Account {
@@ -36,6 +38,9 @@ public class Account {
     @Column(length = 255)
     private String address;
 
-    @Column(length = 10)
-    private String gender;
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
 }
