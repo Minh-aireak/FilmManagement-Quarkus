@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-@Path("/api/booking")
+
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class BookingController {
@@ -33,7 +33,7 @@ public class BookingController {
     // API 1: Lấy danh sách lịch chiếu theo ID Phim (Khi user click vào Phim)
     // =========================================================================
     @GET
-    @Path("/movies/{idMovie}/showtimes")
+    @Path("/showtimes/movie/{idMovie}")
     public Response getShowtimesByMovie(@PathParam("idMovie") String idMovie) {
         // Tìm tất cả lịch chiếu có idMovie tương ứng
         List<Showtime> showtimes = showtimeRepo.find("idMovie", idMovie).list();
