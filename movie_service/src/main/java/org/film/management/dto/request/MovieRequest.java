@@ -4,6 +4,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.film.management.entity.Category;
+
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -38,4 +41,7 @@ public class MovieRequest {
    @NotNull(message = "The movie's image cannot be null!")
    @NotBlank(message = "The movie's image cannot be blank!")
    String image;
+
+   @NotNull(message = "The movie's category cannot be null!")
+   List<Category> idCategories;
 }
