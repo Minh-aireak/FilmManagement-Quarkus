@@ -1,0 +1,19 @@
+package org.film.management.entity;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "showtime_seat")
+@IdClass(ShowtimeSeatId.class) // Khai báo class khóa kép vừa tạo ở trên
+public class ShowtimeSeat {
+    @Id
+    public String idShowtime;
+
+    @Id
+    public String idSeat;
+
+    public String status; // BOOKED
+}
