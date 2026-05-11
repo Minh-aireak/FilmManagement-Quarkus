@@ -160,4 +160,10 @@ public class BookingService {
 
         billRepo.delete(bill);
     }
+
+    // [ADMIN] Lấy toàn bộ danh sách hóa đơn của tất cả khách hàng
+    public List<Bill> getAllBillsForAdmin() {
+        // Trả về toàn bộ danh sách hóa đơn, sắp xếp theo thời gian mới nhất lên đầu
+        return billRepo.find("order by bookingTime desc").list();
+    }
 }

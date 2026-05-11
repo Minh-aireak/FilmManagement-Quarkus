@@ -62,7 +62,7 @@ public class BookingController {
     }
     // API 6: Xem chi tiết 1 hóa đơn vừa đặt
     @GET
-    @Path("/bill/{idBill}")
+    @Path("/bills/{idBill}")
     public Response getBillDetail(@PathParam("idBill") String idBill) {
         try {
             return Response.ok(bookingService.getBillDetail(idBill)).build();
@@ -88,5 +88,11 @@ public class BookingController {
         } catch (Exception e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
         }
+    }
+    // API 9: [ADMIN] Lấy toàn bộ danh sách hóa đơn
+    @GET
+    @Path("/admin/bills")
+    public Response getAllBills() {
+        return Response.ok(bookingService.getAllBillsForAdmin()).build();
     }
 }
