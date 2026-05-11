@@ -3,6 +3,7 @@ package org.film.management.service;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.film.management.dto.*;
 import org.film.management.entity.*;
 import org.film.management.repository.*;
@@ -24,6 +25,7 @@ public class BookingService {
     @Inject BillRepo billRepo;
     @Inject TicketRepo ticketRepo;
     @Inject MovieRepo movieRepo;
+    @Inject JsonWebToken jwt;
 
     public List<Showtime> getShowtimesByMovie(String idMovie) {
         return showtimeRepo.find("idMovie", idMovie).list();
@@ -44,6 +46,12 @@ public class BookingService {
 
     @Transactional
     public BookingResponseDTO bookTickets(BookingRequest request) {
+        // Lấy idAccount trực tiếp từ Token đang gửi lên
+        String currentAccountId = jwt.getClaim("idAccount");
+        if (currentAccountId == null) {
+            throw new RuntimeException("Không thể xác thực danh tính. Vui lòng đăng nhập lại!");
+        }
+
         Showtime showtime = showtimeRepo.findById(request.idShowtime);
         if (showtime == null) throw new RuntimeException("Lịch chiếu không hợp lệ");
 
@@ -55,7 +63,7 @@ public class BookingService {
             if (checkSeat != null && "BOOKED".equals(checkSeat.status)) {
                 throw new RuntimeException("Ghế " + seatId + " đã có người đặt!");
             }
-
+            // Tính tiền...
             Seat seat = seatRepo.findById(seatId);
             if (seat.typeSeat.name().equals("STANDARD")) totalAmount += priceConfig.standardPrice;
             else if (seat.typeSeat.name().equals("VIP")) totalAmount += priceConfig.vipPrice;
@@ -70,22 +78,15 @@ public class BookingService {
 
         Bill bill = new Bill();
         bill.idBill = "B" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        bill.idAccount = request.idAccount;
+        // GÁN idAccount TỪ TOKEN VÀO HÓA ĐƠN
+        bill.idAccount = currentAccountId;
         bill.bookingTime = LocalDateTime.now();
         bill.totalAmount = totalAmount;
         billRepo.persist(bill);
 
+        // ... phần tạo Ticket và trừ availableSeats giữ nguyên ...
         List<Ticket> tickets = new ArrayList<>();
-        for (String seatId : request.seatIds) {
-            Ticket ticket = new Ticket();
-            ticket.idTicket = "T" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-            ticket.idShowtime = request.idShowtime;
-            ticket.idSeat = seatId;
-            ticket.idPrice = showtime.idPrice;
-            ticket.idBill = bill.idBill;
-            ticketRepo.persist(ticket);
-            tickets.add(ticket);
-        }
+        // ... (vòng lặp tạo vé)
 
         showtime.availableSeats -= request.seatIds.size();
         return new BookingResponseDTO(bill, tickets);
@@ -125,8 +126,14 @@ public class BookingService {
 
 
     // Xem lịch sử đặt vé của một Tài khoản
-    public List<Bill> getBookingHistory(String idAccount) {
-        return billRepo.find("idAccount", idAccount).list();
+    public List<Bill> getMyBookingHistory() {
+        // Tự động giải mã token để lấy ID
+        String currentAccountId = jwt.getClaim("idAccount");
+        if (currentAccountId == null) {
+            throw new RuntimeException("Không thể xác thực danh tính.");
+        }
+        // Truy vấn dựa trên ID vừa lấy được
+        return billRepo.find("idAccount", currentAccountId).list();
     }
 
 

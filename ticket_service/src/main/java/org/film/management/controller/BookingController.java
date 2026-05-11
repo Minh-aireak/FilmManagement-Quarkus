@@ -6,6 +6,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.film.management.dto.BookingRequest;
 import org.film.management.service.BookingService;
+import io.quarkus.security.Authenticated;
 
 @Path("")
 @Produces(MediaType.APPLICATION_JSON)
@@ -29,7 +30,8 @@ public class BookingController {
     }
     // API 3: Thực hiện đặt vé
     @POST
-    @Path("/booking")
+    @Path("/checkout")
+    @Authenticated
     public Response bookTickets(BookingRequest request) {
         try {
             return Response.ok(bookingService.bookTickets(request)).build();
@@ -73,9 +75,14 @@ public class BookingController {
 
     // API 7: Xem lịch sử đặt vé của user
     @GET
-    @Path("/history/{idAccount}")
-    public Response getHistory(@PathParam("idAccount") String idAccount) {
-        return Response.ok(bookingService.getBookingHistory(idAccount)).build();
+    @Path("/history")
+    @Authenticated // BẮT BUỘC có Token
+    public Response getHistory() {
+        try {
+            return Response.ok(bookingService.getMyBookingHistory()).build();
+        } catch (RuntimeException e) {
+            return Response.status(Response.Status.UNAUTHORIZED).entity(e.getMessage()).build();
+        }
     }
 
     // API 8: Hủy đặt vé
