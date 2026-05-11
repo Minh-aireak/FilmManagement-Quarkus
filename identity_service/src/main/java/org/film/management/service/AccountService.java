@@ -20,7 +20,6 @@ public class AccountService {
     @Inject
     AccountRepository accountRepository;
 
-    // Logic Đăng nhập
     public AuthResponse authenticate(LoginRequest credentials) {
         Account account = accountRepository.findByEmail(credentials.getEmail());
 
@@ -68,6 +67,7 @@ public class AccountService {
 
     @Transactional
     public Account updateAccount(String id, Account updatedData) {
+        // gai to ken
         Account entity = accountRepository.findById(id);
         if (entity != null) {
             entity.setFirstName(updatedData.getFirstName());

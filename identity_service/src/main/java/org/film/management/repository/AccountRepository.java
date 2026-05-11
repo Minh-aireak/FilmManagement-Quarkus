@@ -10,8 +10,4 @@ public class AccountRepository implements PanacheRepositoryBase<Account, String>
     public Account findByEmail(String email) {
         return find("email", email).firstResult();
     }
-
-    public Account findByPhone(String phone) {
-        return find("phone", phone).firstResult();
-    }
 }

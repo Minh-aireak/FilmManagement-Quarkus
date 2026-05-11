@@ -18,6 +18,8 @@ public class AccountController {
 
     @Inject
     AccountRepository accountRepository;
+
+    @Inject
     AccountService accountService;
 
     @GET
@@ -35,14 +37,14 @@ public class AccountController {
 
     @PUT
     @Path("/{id}")
-    @RolesAllowed({"ADMIN", "CUSTOMER"}) // Cả 2 đều có quyền sửa thông tin cá nhân
+    @RolesAllowed({"ADMIN", "CUSTOMER"})
     public Account update(@PathParam("id") String id, Account account) {
         return accountService.updateAccount(id, account);
     }
 
     @DELETE
     @Path("/{id}")
-    @RolesAllowed("ADMIN") // Chỉ Admin mới có quyền xóa tài khoản
+    @RolesAllowed("ADMIN")
     public void delete(@PathParam("id") String id) {
         boolean deleted = accountService.deleteAccount(id);
         if (!deleted) {
