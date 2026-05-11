@@ -2,13 +2,11 @@ package org.film.management.controller;
 
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import org.film.management.entity.Account;
-import org.film.management.repository.AccountRepository;
 import org.film.management.service.AccountService;
-
+import jakarta.ws.rs.core.Response;
 import java.util.List;
 
 @Path("/accounts")
@@ -16,28 +14,32 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class AccountController {
 
+
     @Inject
-    AccountRepository accountRepository;
     AccountService accountService;
 
     @GET
     @RolesAllowed("ADMIN")
     public List<Account> getAllAccounts() {
-        return accountRepository.listAll();
+        // Controller gọi Service xử lý
+        return accountService.getAll();
     }
 
     @GET
     @Path("/{id}")
     @RolesAllowed({"ADMIN", "CUSTOMER"})
     public Account getAccount(@PathParam("id") String idAccount) {
-        return accountRepository.findById(idAccount);
+        // Controller gọi Service xử lý
+        return accountService.getById(idAccount);
     }
 
     @PUT
-    @Path("/{id}")
-    @RolesAllowed({"ADMIN", "CUSTOMER"}) // Cả 2 đều có quyền sửa thông tin cá nhân
-    public Account update(@PathParam("id") String id, Account account) {
-        return accountService.updateAccount(id, account);
+    @Path("/update-profile")
+    @RolesAllowed({"ADMIN", "CUSTOMER"})
+    public Response updateProfile(Account account) {
+        // Hàm này không cần nhận ID từ URL, cực kỳ bảo mật và linh hoạt
+        Account result = accountService.updateAccount(account);
+        return result != null ? Response.ok(result).build() : Response.status(401).build();
     }
 
     @DELETE
@@ -49,4 +51,5 @@ public class AccountController {
             throw new NotFoundException("Không tìm thấy tài khoản để xóa");
         }
     }
+
 }

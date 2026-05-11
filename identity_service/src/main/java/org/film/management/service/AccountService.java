@@ -5,12 +5,14 @@ import io.smallrye.jwt.build.Jwt;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.film.management.entity.Account;
 import org.film.management.repository.AccountRepository;
 import org.film.management.controller.AuthResponse;
 import org.film.management.controller.LoginRequest;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -19,6 +21,12 @@ public class AccountService {
 
     @Inject
     AccountRepository accountRepository;
+    @Inject
+    JsonWebToken jwt;
+
+    public String getCurrentId() {
+        return jwt.getClaim("idAccount"); // Tự động lấy ID của người đang gửi Request
+    }
 
     // Logic Đăng nhập
     public AuthResponse authenticate(LoginRequest credentials) {
@@ -44,7 +52,7 @@ public class AccountService {
                 .sign();
 
         // Trả về cả Token và Role
-        return new AuthResponse(token, roleName);
+        return new AuthResponse(token, roleName, account.getFirstName() + account.getLastName());
     }
 
     // Logic Đăng ký
@@ -66,8 +74,21 @@ public class AccountService {
         return true;
     }
 
+    // Logic lấy toàn bộ danh sách
+    public List<Account> getAll() {
+        return accountRepository.listAll();
+    }
+
+    // Logic lấy chi tiết theo ID
+    public Account getById(String id) {
+        return accountRepository.findById(id);
+    }
+
     @Transactional
-    public Account updateAccount(String id, Account updatedData) {
+    public Account updateAccount(Account updatedData) {
+        String id = getCurrentId(); // Lấy ID động, không cần truyền từ Resource sang
+        if (id == null) return null;
+
         Account entity = accountRepository.findById(id);
         if (entity != null) {
             entity.setFirstName(updatedData.getFirstName());
