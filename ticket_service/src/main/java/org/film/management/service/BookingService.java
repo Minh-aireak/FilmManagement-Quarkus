@@ -46,7 +46,6 @@ public class BookingService {
 
     @Transactional
     public BookingResponseDTO bookTickets(BookingRequest request) {
-        // Lấy idAccount trực tiếp từ Token đang gửi lên
         String currentAccountId = jwt.getClaim("idAccount");
         if (currentAccountId == null) {
             throw new RuntimeException("Không thể xác thực danh tính. Vui lòng đăng nhập lại!");
@@ -63,7 +62,6 @@ public class BookingService {
             if (checkSeat != null && "BOOKED".equals(checkSeat.status)) {
                 throw new RuntimeException("Ghế " + seatId + " đã có người đặt!");
             }
-            // Tính tiền...
             Seat seat = seatRepo.findById(seatId);
             if (seat.typeSeat.name().equals("STANDARD")) totalAmount += priceConfig.standardPrice;
             else if (seat.typeSeat.name().equals("VIP")) totalAmount += priceConfig.vipPrice;
@@ -78,7 +76,6 @@ public class BookingService {
 
         Bill bill = new Bill();
         bill.idBill = "B" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        // GÁN idAccount TỪ TOKEN VÀO HÓA ĐƠN
         bill.idAccount = currentAccountId;
         bill.bookingTime = LocalDateTime.now();
         bill.totalAmount = totalAmount;
@@ -87,21 +84,17 @@ public class BookingService {
         List<Ticket> tickets = new ArrayList<>();
         for (String seatId : request.seatIds) {
             Ticket ticket = new Ticket();
-            // Sinh mã vé ngẫu nhiên (ví dụ: T_ABC1234)
             ticket.idTicket = "T_" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
             ticket.idShowtime = request.idShowtime;
             ticket.idSeat = seatId;
             ticket.idPrice = showtime.idPrice;
-            ticket.idBill = bill.idBill; // Gắn ID hóa đơn vừa tạo ở trên vào vé
+            ticket.idBill = bill.idBill;
 
-            // Lưu vé xuống Database
             ticketRepo.persist(ticket);
 
-            // QUAN TRỌNG NHẤT: Thêm vé vừa tạo vào danh sách để trả về Postman
             tickets.add(ticket);
         }
 
-        // Trừ đi số ghế trống của suất chiếu
         showtime.availableSeats -= request.seatIds.size();
         return new BookingResponseDTO(bill, tickets);
     }
@@ -109,11 +102,9 @@ public class BookingService {
     public List<Movie> getMoviesByDate(String dateStr) {
         LocalDate parsedDate = LocalDate.parse(dateStr);
 
-        // 2. Lấy mốc thời gian bắt đầu và kết thúc của ngày hôm đó
-        LocalDateTime startOfDay = parsedDate.atStartOfDay(); // Ví dụ: 2025-12-15T00:00:00
-        LocalDateTime endOfDay = parsedDate.atTime(23, 59, 59); // Ví dụ: 2025-12-15T23:59:59
+        LocalDateTime startOfDay = parsedDate.atStartOfDay();
+        LocalDateTime endOfDay = parsedDate.atTime(23, 59, 59);
 
-        // 3. Truy vấn tìm lịch chiếu nằm trong khoảng thời gian này (Không cần dùng CAST)
         List<Showtime> showtimes = showtimeRepo.find("showTime >= ?1 AND showTime <= ?2", startOfDay, endOfDay).list();
 
         List<String> movieIds = showtimes.stream().map(s -> s.idMovie).distinct().collect(Collectors.toList());
@@ -129,7 +120,6 @@ public class BookingService {
         return showtimeRepo.listAll();
     }
 
-    // Xem chi tiết 1 Hóa đơn và các Vé đi kèm
     public BookingResponseDTO getBillDetail(String idBill) {
         Bill bill = billRepo.findById(idBill);
         if (bill == null) throw new RuntimeException("Không tìm thấy hóa đơn");
@@ -138,43 +128,32 @@ public class BookingService {
         return new BookingResponseDTO(bill, tickets);
     }
 
-
-    // Xem lịch sử đặt vé của một Tài khoản
     public List<Bill> getMyBookingHistory() {
-        // Tự động giải mã token để lấy ID
         String currentAccountId = jwt.getClaim("idAccount");
         if (currentAccountId == null) {
             throw new RuntimeException("Không thể xác thực danh tính.");
         }
-        // Truy vấn dựa trên ID vừa lấy được
         return billRepo.find("idAccount", currentAccountId).list();
     }
 
-
-    // Hủy vé (Xóa Bill, Ticket, cập nhật lại trạng thái Ghế và Số lượng ghế)
     @Transactional
     public void cancelBill(String idBill) {
         Bill bill = billRepo.findById(idBill);
         if (bill == null) throw new RuntimeException("Hóa đơn không tồn tại");
 
-        // 1. Lấy danh sách vé thuộc hóa đơn này
         List<Ticket> tickets = ticketRepo.find("idBill", idBill).list();
         if (tickets.isEmpty()) throw new RuntimeException("Không tìm thấy vé trong hóa đơn");
 
-        // Lấy thông tin lịch chiếu (để hoàn trả số ghế)
         String idShowtime = tickets.get(0).idShowtime;
         Showtime showtime = showtimeRepo.findById(idShowtime);
 
         for (Ticket tk : tickets) {
-            // 2. Xóa trạng thái đặt ghế trong bảng showtime_seat
             ShowtimeSeatId seatId = new ShowtimeSeatId(tk.idShowtime, tk.idSeat);
             showtimeSeatRepo.deleteById(seatId);
 
-            // 3. Xóa vé
             ticketRepo.delete(tk);
         }
 
-        // 4. Cập nhật lại số ghế trống của lịch chiếu
         if (showtime != null) {
             showtime.availableSeats += tickets.size();
         }
@@ -182,9 +161,7 @@ public class BookingService {
         billRepo.delete(bill);
     }
 
-    // [ADMIN] Lấy toàn bộ danh sách hóa đơn của tất cả khách hàng
     public List<Bill> getAllBillsForAdmin() {
-        // Trả về toàn bộ danh sách hóa đơn, sắp xếp theo thời gian mới nhất lên đầu
         return billRepo.find("order by bookingTime desc").list();
     }
 }

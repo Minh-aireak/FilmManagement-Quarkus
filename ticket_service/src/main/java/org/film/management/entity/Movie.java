@@ -15,7 +15,7 @@ public class Movie {
     public String nameMovie;
     public String author;
     public String actors;
-    public int duration;
+    public String duration;
     public String language;
     public String description;
     public String image;
