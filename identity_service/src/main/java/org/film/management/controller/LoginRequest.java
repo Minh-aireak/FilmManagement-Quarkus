@@ -1,4 +1,4 @@
-package org.film.management.resource;
+package org.film.management.controller;
 
 import lombok.Data;
 

@@ -1,4 +1,4 @@
-package org.film.management.resource;
+package org.film.management.controller;
 
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
@@ -14,7 +14,7 @@ import java.util.List;
 @Path("/accounts")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class AccountResource {
+public class AccountController {
 
     @Inject
     AccountRepository accountRepository;

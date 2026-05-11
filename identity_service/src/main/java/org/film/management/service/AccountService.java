@@ -7,8 +7,8 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.film.management.entity.Account;
 import org.film.management.repository.AccountRepository;
-import org.film.management.resource.AuthResponse;
-import org.film.management.resource.LoginRequest;
+import org.film.management.controller.AuthResponse;
+import org.film.management.controller.LoginRequest;
 
 import java.util.HashSet;
 import java.util.Set;

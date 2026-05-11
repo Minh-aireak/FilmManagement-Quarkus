@@ -1,4 +1,4 @@
-package org.film.management.resource;
+package org.film.management.controller;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -12,7 +12,7 @@ import java.util.Map;
 @Path("/auth")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class AuthResource {
+public class AuthController {
 
     // Nhúng Service vào Controller
     @Inject
