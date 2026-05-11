@@ -84,10 +84,24 @@ public class BookingService {
         bill.totalAmount = totalAmount;
         billRepo.persist(bill);
 
-        // ... phần tạo Ticket và trừ availableSeats giữ nguyên ...
         List<Ticket> tickets = new ArrayList<>();
-        // ... (vòng lặp tạo vé)
+        for (String seatId : request.seatIds) {
+            Ticket ticket = new Ticket();
+            // Sinh mã vé ngẫu nhiên (ví dụ: T_ABC1234)
+            ticket.idTicket = "T_" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+            ticket.idShowtime = request.idShowtime;
+            ticket.idSeat = seatId;
+            ticket.idPrice = showtime.idPrice;
+            ticket.idBill = bill.idBill; // Gắn ID hóa đơn vừa tạo ở trên vào vé
 
+            // Lưu vé xuống Database
+            ticketRepo.persist(ticket);
+
+            // QUAN TRỌNG NHẤT: Thêm vé vừa tạo vào danh sách để trả về Postman
+            tickets.add(ticket);
+        }
+
+        // Trừ đi số ghế trống của suất chiếu
         showtime.availableSeats -= request.seatIds.size();
         return new BookingResponseDTO(bill, tickets);
     }
