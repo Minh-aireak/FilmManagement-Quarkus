@@ -30,7 +30,7 @@ public class BookingController {
     }
     // API 3: Thực hiện đặt vé
     @POST
-    @Path("/checkout")
+    @Path("/booking")
     @Authenticated
     public Response bookTickets(BookingRequest request) {
         try {
