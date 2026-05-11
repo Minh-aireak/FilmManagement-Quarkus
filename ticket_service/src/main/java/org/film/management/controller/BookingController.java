@@ -5,7 +5,10 @@ import org.film.management.dto.SeatStatusDTO;
 import org.film.management.entity.*;
 import org.film.management.repository.*;
 import org.film.management.dto.BookingResponseDTO;
+import org.film.management.entity.Movie;
+import org.film.management.repository.MovieRepo;
 
+import java.time.LocalDate;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
@@ -17,7 +20,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-
+@Path("/booking")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class BookingController {
@@ -28,14 +31,15 @@ public class BookingController {
     @Inject PriceRepo priceRepo;
     @Inject BillRepo billRepo;
     @Inject TicketRepo ticketRepo;
+    @Inject MovieRepo movieRepo;
+    @Inject RoomRepo roomRepo;
 
     // =========================================================================
     // API 1: Lấy danh sách lịch chiếu theo ID Phim (Khi user click vào Phim)
     // =========================================================================
     @GET
-    @Path("/showtimes/movie/{idMovie}")
+    @Path("/movies/showtimes/{idMovie}")
     public Response getShowtimesByMovie(@PathParam("idMovie") String idMovie) {
-        // Tìm tất cả lịch chiếu có idMovie tương ứng
         List<Showtime> showtimes = showtimeRepo.find("idMovie", idMovie).list();
         if (showtimes.isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND).entity("Không có lịch chiếu cho phim này").build();
@@ -135,5 +139,55 @@ public class BookingController {
         // Trả về thông tin Hóa đơn và các Vé đã tạo thành công
         BookingResponseDTO responseData = new BookingResponseDTO(bill, generatedTickets);
         return Response.ok(responseData).build();
+    }
+    // =========================================================================
+    // API 4: Lấy phim theo ngày
+    // =========================================================================
+    @GET
+    @Path("/date/{date}/movies")
+    public Response getMoviesByDate(@PathParam("date") String dateStr) {
+        try {
+            LocalDate parsedDate = LocalDate.parse(dateStr);
+
+            List<Showtime> showtimes = showtimeRepo.find("CAST(showTime AS date) = ?1", parsedDate).list();
+
+            if (showtimes.isEmpty()) {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity("Không có phim nào chiếu trong ngày " + dateStr).build();
+            }
+
+            List<String> movieIds = showtimes.stream()
+                    .map(s -> s.idMovie)
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            List<Movie> movies = new ArrayList<>();
+            for (String id : movieIds) {
+                Movie m = movieRepo.findById(id);
+                if (m != null) movies.add(m);
+            }
+
+            return Response.ok(movies).build();
+
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Định dạng ngày không hợp lệ. Vui lòng dùng định dạng YYYY-MM-DD").build();
+        }
+    }
+    // =========================================================================
+    // API 5: Lấy toàn bộ danh sách lịch chiếu
+    // =========================================================================
+    @GET
+    @Path("/showtimes")
+    public Response getAllShowtimes() {
+        // Lấy tất cả lịch chiếu trong database và sắp xếp theo thời gian gần nhất
+        List<Showtime> showtimes = showtimeRepo.listAll();
+
+        if (showtimes.isEmpty()) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Hiện chưa có lịch chiếu nào được cấu hình").build();
+        }
+
+        return Response.ok(showtimes).build();
     }
 }
