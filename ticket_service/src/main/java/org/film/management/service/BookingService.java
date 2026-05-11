@@ -1,0 +1,163 @@
+package org.film.management.service;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import org.film.management.dto.*;
+import org.film.management.entity.*;
+import org.film.management.repository.*;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@ApplicationScoped
+public class BookingService {
+
+    @Inject ShowtimeRepo showtimeRepo;
+    @Inject SeatRepo seatRepo;
+    @Inject ShowtimeSeatRepo showtimeSeatRepo;
+    @Inject PriceRepo priceRepo;
+    @Inject BillRepo billRepo;
+    @Inject TicketRepo ticketRepo;
+    @Inject MovieRepo movieRepo;
+
+    public List<Showtime> getShowtimesByMovie(String idMovie) {
+        return showtimeRepo.find("idMovie", idMovie).list();
+    }
+
+    public List<SeatStatusDTO> getSeatStatus(String idShowtime) {
+        List<Seat> allSeats = seatRepo.listAll();
+        List<ShowtimeSeat> bookedSeats = showtimeSeatRepo.find("idShowtime", idShowtime).list();
+        List<String> bookedSeatIds = bookedSeats.stream().map(bs -> bs.idSeat).collect(Collectors.toList());
+
+        List<SeatStatusDTO> seatStatuses = new ArrayList<>();
+        for (Seat seat : allSeats) {
+            String status = bookedSeatIds.contains(seat.idSeat) ? "BOOKED" : "AVAILABLE";
+            seatStatuses.add(new SeatStatusDTO(seat.idSeat, seat.typeSeat.toString(), status));
+        }
+        return seatStatuses;
+    }
+
+    @Transactional
+    public BookingResponseDTO bookTickets(BookingRequest request) {
+        Showtime showtime = showtimeRepo.findById(request.idShowtime);
+        if (showtime == null) throw new RuntimeException("Lịch chiếu không hợp lệ");
+
+        Price priceConfig = priceRepo.findById(showtime.idPrice);
+        int totalAmount = 0;
+
+        for (String seatId : request.seatIds) {
+            ShowtimeSeat checkSeat = showtimeSeatRepo.findById(new ShowtimeSeatId(request.idShowtime, seatId));
+            if (checkSeat != null && "BOOKED".equals(checkSeat.status)) {
+                throw new RuntimeException("Ghế " + seatId + " đã có người đặt!");
+            }
+
+            Seat seat = seatRepo.findById(seatId);
+            if (seat.typeSeat.name().equals("STANDARD")) totalAmount += priceConfig.standardPrice;
+            else if (seat.typeSeat.name().equals("VIP")) totalAmount += priceConfig.vipPrice;
+            else if (seat.typeSeat.name().equals("TRIPLE")) totalAmount += priceConfig.triplePrice;
+
+            ShowtimeSeat newBookedSeat = new ShowtimeSeat();
+            newBookedSeat.idShowtime = request.idShowtime;
+            newBookedSeat.idSeat = seatId;
+            newBookedSeat.status = "BOOKED";
+            showtimeSeatRepo.persist(newBookedSeat);
+        }
+
+        Bill bill = new Bill();
+        bill.idBill = "B" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        bill.idAccount = request.idAccount;
+        bill.bookingTime = LocalDateTime.now();
+        bill.totalAmount = totalAmount;
+        billRepo.persist(bill);
+
+        List<Ticket> tickets = new ArrayList<>();
+        for (String seatId : request.seatIds) {
+            Ticket ticket = new Ticket();
+            ticket.idTicket = "T" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            ticket.idShowtime = request.idShowtime;
+            ticket.idSeat = seatId;
+            ticket.idPrice = showtime.idPrice;
+            ticket.idBill = bill.idBill;
+            ticketRepo.persist(ticket);
+            tickets.add(ticket);
+        }
+
+        showtime.availableSeats -= request.seatIds.size();
+        return new BookingResponseDTO(bill, tickets);
+    }
+
+    public List<Movie> getMoviesByDate(String dateStr) {
+        LocalDate parsedDate = LocalDate.parse(dateStr);
+
+        // 2. Lấy mốc thời gian bắt đầu và kết thúc của ngày hôm đó
+        LocalDateTime startOfDay = parsedDate.atStartOfDay(); // Ví dụ: 2025-12-15T00:00:00
+        LocalDateTime endOfDay = parsedDate.atTime(23, 59, 59); // Ví dụ: 2025-12-15T23:59:59
+
+        // 3. Truy vấn tìm lịch chiếu nằm trong khoảng thời gian này (Không cần dùng CAST)
+        List<Showtime> showtimes = showtimeRepo.find("showTime >= ?1 AND showTime <= ?2", startOfDay, endOfDay).list();
+
+        List<String> movieIds = showtimes.stream().map(s -> s.idMovie).distinct().collect(Collectors.toList());
+        List<Movie> movies = new ArrayList<>();
+        for (String id : movieIds) {
+            Movie m = movieRepo.findById(id);
+            if (m != null) movies.add(m);
+        }
+        return movies;
+    }
+
+    public List<Showtime> getAllShowtimes() {
+        return showtimeRepo.listAll();
+    }
+
+    // Xem chi tiết 1 Hóa đơn và các Vé đi kèm
+    public BookingResponseDTO getBillDetail(String idBill) {
+        Bill bill = billRepo.findById(idBill);
+        if (bill == null) throw new RuntimeException("Không tìm thấy hóa đơn");
+
+        List<Ticket> tickets = ticketRepo.find("idBill", idBill).list();
+        return new BookingResponseDTO(bill, tickets);
+    }
+
+
+    // Xem lịch sử đặt vé của một Tài khoản
+    public List<Bill> getBookingHistory(String idAccount) {
+        return billRepo.find("idAccount", idAccount).list();
+    }
+
+
+    // Hủy vé (Xóa Bill, Ticket, cập nhật lại trạng thái Ghế và Số lượng ghế)
+    @Transactional
+    public void cancelBill(String idBill) {
+        Bill bill = billRepo.findById(idBill);
+        if (bill == null) throw new RuntimeException("Hóa đơn không tồn tại");
+
+        // 1. Lấy danh sách vé thuộc hóa đơn này
+        List<Ticket> tickets = ticketRepo.find("idBill", idBill).list();
+        if (tickets.isEmpty()) throw new RuntimeException("Không tìm thấy vé trong hóa đơn");
+
+        // Lấy thông tin lịch chiếu (để hoàn trả số ghế)
+        String idShowtime = tickets.get(0).idShowtime;
+        Showtime showtime = showtimeRepo.findById(idShowtime);
+
+        for (Ticket tk : tickets) {
+            // 2. Xóa trạng thái đặt ghế trong bảng showtime_seat
+            ShowtimeSeatId seatId = new ShowtimeSeatId(tk.idShowtime, tk.idSeat);
+            showtimeSeatRepo.deleteById(seatId);
+
+            // 3. Xóa vé
+            ticketRepo.delete(tk);
+        }
+
+        // 4. Cập nhật lại số ghế trống của lịch chiếu
+        if (showtime != null) {
+            showtime.availableSeats += tickets.size();
+        }
+
+        billRepo.delete(bill);
+    }
+}
