@@ -23,8 +23,11 @@ public class CategoryService {
     @Transactional
     public void createCategory(String idCategory) {
 
-        categoryRepository.findByIdOptional(idCategory)
-                        .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_EXISTED));
+        Category category = categoryRepository.findById(idCategory);
+
+        if (category != null) {
+            throw new AppException(ErrorCode.CATEGORY_EXISTED);
+        }
 
         categoryRepository.persist(new Category(idCategory));
     }

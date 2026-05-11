@@ -20,21 +20,20 @@ public class AuthController {
     @POST
     @Path("/login")
     public Response login(LoginRequest credentials) {
-        AuthResponse authResponse = accountService.authenticate(credentials);
+        LoginResponse loginResponse = accountService.authenticate(credentials);
 
-        if (authResponse == null) {
+        if (loginResponse == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .entity(Map.of("error", "Sai email hoặc mật khẩu"))
                     .build();
         }
 
-        return Response.ok(authResponse).build();
+        return Response.ok(loginResponse).build();
     }
 
     @POST
     @Path("/register")
     public Response register(Account newAccount) {
-        // Gọi Service xử lý logic
         boolean success = accountService.register(newAccount);
 
         if (!success) {

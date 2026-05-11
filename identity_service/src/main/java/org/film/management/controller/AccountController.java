@@ -14,22 +14,19 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class AccountController {
 
-
     @Inject
     AccountService accountService;
 
     @GET
     @RolesAllowed("ADMIN")
     public List<Account> getAllAccounts() {
-        // Controller gọi Service xử lý
         return accountService.getAll();
     }
 
     @GET
-    @Path("/{id}")
+    @Path("/{idAccount}")
     @RolesAllowed({"ADMIN", "CUSTOMER"})
-    public Account getAccount(@PathParam("id") String idAccount) {
-        // Controller gọi Service xử lý
+    public Account getAccount(@PathParam("idAccount") String idAccount) {
         return accountService.getById(idAccount);
     }
 
@@ -37,14 +34,13 @@ public class AccountController {
     @Path("/update-profile")
     @RolesAllowed({"ADMIN", "CUSTOMER"})
     public Response updateProfile(Account account) {
-        // Hàm này không cần nhận ID từ URL, cực kỳ bảo mật và linh hoạt
         Account result = accountService.updateAccount(account);
         return result != null ? Response.ok(result).build() : Response.status(401).build();
     }
 
     @DELETE
     @Path("/{id}")
-    @RolesAllowed("ADMIN") // Chỉ Admin mới có quyền xóa tài khoản
+    @RolesAllowed("ADMIN")
     public void delete(@PathParam("id") String id) {
         boolean deleted = accountService.deleteAccount(id);
         if (!deleted) {

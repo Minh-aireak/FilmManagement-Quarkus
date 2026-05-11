@@ -18,6 +18,7 @@ public enum ErrorCode {
     CATEGORY_NOT_EXIST(2005, "Category not exist!", Response.Status.NOT_FOUND),
     CATEGORY_IS_IN_USE(2006, "Category is in use!", Response.Status.BAD_REQUEST),
     UPLOAD_ERROR(2007, "Upload file had problem!", Response.Status.BAD_REQUEST),
+    MOVIE_IS_IN_USE(2008, "Movie is currently in use and cannot be deleted!", Response.Status.BAD_REQUEST),
     INTERNAL_SERVER_ERROR(9999, "Internal server error", Response.Status.INTERNAL_SERVER_ERROR);
 
     int code;
