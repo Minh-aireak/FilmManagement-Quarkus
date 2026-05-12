@@ -9,14 +9,11 @@ import jakarta.transaction.Transactional;
 
 import org.film.management.dto.request.MovieRequest;
 import org.film.management.dto.response.PageResponse;
-import org.film.management.entity.Category;
 import org.film.management.entity.Movie;
 import org.film.management.exception.AppException;
 import org.film.management.exception.ErrorCode;
 import org.film.management.repository.MovieRepository;
-
 import java.time.LocalDateTime;
-import java.util.List;
 
 @ApplicationScoped
 public class MovieService {

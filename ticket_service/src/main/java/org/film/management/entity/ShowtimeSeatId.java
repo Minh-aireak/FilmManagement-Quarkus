@@ -14,7 +14,6 @@ public class ShowtimeSeatId implements Serializable {
         this.idSeat = idSeat;
     }
 
-    // Bắt buộc phải có equals và hashCode cho khóa kép
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

@@ -2,13 +2,11 @@ package org.film.management.controller;
 
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import org.film.management.entity.Account;
-import org.film.management.repository.AccountRepository;
 import org.film.management.service.AccountService;
-
+import jakarta.ws.rs.core.Response;
 import java.util.List;
 
 @Path("/accounts")
@@ -17,29 +15,27 @@ import java.util.List;
 public class AccountController {
 
     @Inject
-    AccountRepository accountRepository;
-
-    @Inject
     AccountService accountService;
 
     @GET
     @RolesAllowed("ADMIN")
     public List<Account> getAllAccounts() {
-        return accountRepository.listAll();
+        return accountService.getAll();
     }
 
     @GET
-    @Path("/{id}")
+    @Path("/{idAccount}")
     @RolesAllowed({"ADMIN", "CUSTOMER"})
-    public Account getAccount(@PathParam("id") String idAccount) {
-        return accountRepository.findById(idAccount);
+    public Account getAccount(@PathParam("idAccount") String idAccount) {
+        return accountService.getById(idAccount);
     }
 
     @PUT
-    @Path("/{id}")
+    @Path("/update-profile")
     @RolesAllowed({"ADMIN", "CUSTOMER"})
-    public Account update(@PathParam("id") String id, Account account) {
-        return accountService.updateAccount(id, account);
+    public Response updateProfile(Account account) {
+        Account result = accountService.updateAccount(account);
+        return result != null ? Response.ok(result).build() : Response.status(401).build();
     }
 
     @DELETE
@@ -51,4 +47,5 @@ public class AccountController {
             throw new NotFoundException("Không tìm thấy tài khoản để xóa");
         }
     }
+
 }

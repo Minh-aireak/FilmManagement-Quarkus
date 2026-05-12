@@ -1,10 +1,13 @@
 package org.film.management.controller;
 
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import org.film.management.dto.response.ApiResponse;
 import org.film.management.entity.Category;
+import org.film.management.exception.AppException;
+import org.film.management.exception.ErrorCode;
 import org.film.management.service.CategoryService;
 
 import java.util.List;
@@ -27,7 +30,8 @@ public class CategoryController {
     }
 
     @POST
-        public ApiResponse<Void> createCategory(@QueryParam("idCategory") String idCategory) {
+    @RolesAllowed("ADMIN")
+    public ApiResponse<Void> createCategory(@QueryParam("idCategory") String idCategory) {
 
         categoryService.createCategory(idCategory);
 
@@ -37,9 +41,14 @@ public class CategoryController {
     }
 
     @DELETE
+    @RolesAllowed("ADMIN")
     public ApiResponse<Void> deleteCategory(@QueryParam("idCategory") String idCategory) {
 
-        categoryService.deleteCategory(idCategory);
+        try {
+            categoryService.deleteCategory(idCategory);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.CATEGORY_IS_IN_USE);
+        }
 
         return ApiResponse.<Void>builder()
                 .message("Delete category successfully!")

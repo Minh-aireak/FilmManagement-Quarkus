@@ -1,5 +1,6 @@
 package org.film.management.controller;
 
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
@@ -9,6 +10,8 @@ import org.film.management.dto.request.MovieRequest;
 import org.film.management.dto.response.ApiResponse;
 import org.film.management.dto.response.PageResponse;
 import org.film.management.entity.Movie;
+import org.film.management.exception.AppException;
+import org.film.management.exception.ErrorCode;
 import org.film.management.service.MovieService;
 
 @Path("/movies")
@@ -42,6 +45,7 @@ public class MovieController {
     }
 
     @POST
+    @RolesAllowed("ADMIN")
     public ApiResponse<Movie> createMovie(@Valid MovieRequest movieRequest) {
 
         return ApiResponse.<Movie>builder()
@@ -52,6 +56,7 @@ public class MovieController {
 
     @PUT
     @Path("/{idMovie}")
+    @RolesAllowed("ADMIN")
     public ApiResponse<Movie> updateMovie(@PathParam("idMovie") String idMovie,
                                           @Valid MovieRequest movieRequest) {
 
@@ -63,8 +68,13 @@ public class MovieController {
 
     @DELETE
     @Path("/{idMovie}")
+    @RolesAllowed("ADMIN")
     public ApiResponse<Movie> deleteMovie(@PathParam("idMovie") String idMovie) {
-        movieService.deleteMovie(idMovie);
+        try {
+            movieService.deleteMovie(idMovie);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.MOVIE_IS_IN_USE);
+        }
 
         return ApiResponse.<Movie>builder()
                         .message("Delete movie successfully!")
