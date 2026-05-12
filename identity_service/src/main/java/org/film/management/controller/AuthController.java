@@ -14,14 +14,12 @@ import java.util.Map;
 @Consumes(MediaType.APPLICATION_JSON)
 public class AuthController {
 
-    // Nhúng Service vào Controller
     @Inject
     AccountService accountService;
 
     @POST
     @Path("/login")
     public Response login(LoginRequest credentials) {
-        // Gọi Service xử lý logic
         AuthResponse authResponse = accountService.authenticate(credentials);
 
         if (authResponse == null) {
@@ -30,7 +28,6 @@ public class AuthController {
                     .build();
         }
 
-        // Trả về HTTP 200 OK cùng dữ liệu (Token + Role)
         return Response.ok(authResponse).build();
     }
 

@@ -3,7 +3,8 @@ package org.film.management.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -23,7 +24,15 @@ public class Movie {
     private String language;
     private String description;
     private String image;
-    private LocalDate createdAt;
+    private LocalDateTime createdAt;
+
+    @ManyToMany
+    @JoinTable(
+            name = "movie_category",
+            joinColumns = @JoinColumn(name = "idMovie"),
+            inverseJoinColumns = @JoinColumn(name = "idCategory")
+    )
+    private List<Category> categories;
 
     @PrePersist
     public void generateId() {

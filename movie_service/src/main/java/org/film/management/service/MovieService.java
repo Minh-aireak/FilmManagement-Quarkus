@@ -9,10 +9,14 @@ import jakarta.transaction.Transactional;
 
 import org.film.management.dto.request.MovieRequest;
 import org.film.management.dto.response.PageResponse;
+import org.film.management.entity.Category;
 import org.film.management.entity.Movie;
 import org.film.management.exception.AppException;
 import org.film.management.exception.ErrorCode;
 import org.film.management.repository.MovieRepository;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @ApplicationScoped
 public class MovieService {
@@ -46,6 +50,7 @@ public class MovieService {
     @Transactional
     public Movie createMovie(MovieRequest movieRequest) {
         try {
+
             Movie movie = Movie.builder()
                     .nameMovie(movieRequest.getNameMovie())
                     .author(movieRequest.getAuthor())
@@ -54,6 +59,8 @@ public class MovieService {
                     .language(movieRequest.getLanguage())
                     .description(movieRequest.getDescription())
                     .image(movieRequest.getImage())
+                    .createdAt(LocalDateTime.now())
+                    .categories(movieRequest.getIdCategories())
                     .build();
 
             movieRepository.persist(movie);
@@ -77,6 +84,7 @@ public class MovieService {
         oldMovie.setLanguage(movieRequest.getLanguage());
         oldMovie.setDescription(movieRequest.getDescription());
         oldMovie.setImage(movieRequest.getImage());
+        oldMovie.setCategories(movieRequest.getIdCategories());
 
         return oldMovie;
     }
