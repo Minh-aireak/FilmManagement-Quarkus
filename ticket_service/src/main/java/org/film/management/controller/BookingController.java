@@ -23,6 +23,7 @@ public class BookingController {
     }
 
     // API 2: Lấy danh sách ghế và trạng thái theo Lịch chiếu
+    // Chỉ trả về các ghế đã đặt thôi
     @GET
     @Path("/seats/showtimes/{idShowtime}")
     public Response getSeatStatus(@PathParam("idShowtime") String idShowtime) {
@@ -53,10 +54,12 @@ public class BookingController {
         }
         catch (Exception e) {
             e.printStackTrace();
+            // Cần hiển thị ra message lỗi
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Lỗi hệ thống: " + e.getMessage()).build();
         }
     }
     // API 5: Lấy toàn bộ danh sách lịch chiếu
+    // Lỗi không đúng số ghế còn lại
     @GET
     @Path("/showtimes")
     public Response getAllShowtimes() {
@@ -86,6 +89,7 @@ public class BookingController {
     }
 
     // API 8: Hủy đặt vé
+    //Sửa: Chỉ được hủy trước giờ chếu 1 tiếng
     @DELETE
     @Path("/cancel/{idBill}")
     public Response cancelBooking(@PathParam("idBill") String idBill) {
