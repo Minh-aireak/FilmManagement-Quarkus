@@ -31,7 +31,6 @@ public class ImageService {
         File dest = new File(UPLOAD_DIR + newName);
 
         try {
-
             Files.copy(
                     file.uploadedFile(),
                     dest.toPath()
