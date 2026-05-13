@@ -9,6 +9,8 @@ import org.film.management.dto.BookingRequest;
 import org.film.management.service.BookingService;
 import io.quarkus.security.Authenticated;
 
+import java.util.List;
+
 @Path("")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -24,8 +26,10 @@ public class BookingController {
 
     @GET
     @Path("/seats/showtimes/{idShowtime}")
-    public Response getSeatStatus(@PathParam("idShowtime") String idShowtime) {
-        return Response.ok(bookingService.getSeatStatus(idShowtime)).build();
+    public Response getBookedSeats(@PathParam("idShowtime") String idShowtime) {
+        List<String> bookedSeats = bookingService.getBookedSeats(idShowtime);
+
+        return Response.ok(bookedSeats).build();
     }
 
     @POST
@@ -44,14 +48,22 @@ public class BookingController {
     public Response getMoviesByDate(@PathParam("date") String date) {
         try {
             var result = bookingService.getMoviesByDate(date);
-            return result.isEmpty() ? Response.status(Response.Status.NOT_FOUND).build() : Response.ok(result).build();
+
+            if (result.isEmpty()) {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity("Không có suất chiếu nào trong ngày " + date).build();
+            }
+
+            return Response.ok(result).build();
         }
         catch (java.time.format.DateTimeParseException e) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Sai định dạng ngày. Vui lòng nhập YYYY-MM-DD").build();
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Sai định dạng ngày. Vui lòng nhập YYYY-MM-DD").build();
         }
         catch (Exception e) {
             e.printStackTrace();
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Lỗi hệ thống: " + e.getMessage()).build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Lỗi hệ thống: " + e.getMessage()).build();
         }
     }
 
@@ -63,6 +75,7 @@ public class BookingController {
 
     @GET
     @Path("/bills/{idBill}")
+    @Authenticated
     public Response getBillDetail(@PathParam("idBill") String idBill) {
         try {
             return Response.ok(bookingService.getBillDetail(idBill)).build();
@@ -84,6 +97,7 @@ public class BookingController {
 
     @DELETE
     @Path("/cancel/{idBill}")
+    @RolesAllowed({"ADMIN", "CUSTOMER"})
     public Response cancelBooking(@PathParam("idBill") String idBill) {
         try {
             bookingService.cancelBill(idBill);

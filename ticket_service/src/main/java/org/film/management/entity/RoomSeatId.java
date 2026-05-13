@@ -3,14 +3,14 @@ package org.film.management.entity;
 import java.io.Serializable;
 import java.util.Objects;
 
-public class ShowtimeSeatId implements Serializable {
-    public String idShowtime;
+public class RoomSeatId implements Serializable {
+    public String idRoom;
     public String seatCode;
 
-    public ShowtimeSeatId() {}
+    public RoomSeatId() {}
 
-    public ShowtimeSeatId(String idShowtime, String seatCode) {
-        this.idShowtime = idShowtime;
+    public RoomSeatId(String idRoom, String seatCode) {
+        this.idRoom = idRoom;
         this.seatCode = seatCode;
     }
 
@@ -18,13 +18,13 @@ public class ShowtimeSeatId implements Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ShowtimeSeatId that = (ShowtimeSeatId) o;
-        return Objects.equals(idShowtime, that.idShowtime) &&
+        RoomSeatId that = (RoomSeatId) o;
+        return Objects.equals(idRoom, that.idRoom) &&
                 Objects.equals(seatCode, that.seatCode);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(idShowtime, seatCode);
+        return Objects.hash(idRoom, seatCode);
     }
 }

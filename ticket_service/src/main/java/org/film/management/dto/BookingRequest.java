@@ -3,5 +3,5 @@ import java.util.List;
 
 public class BookingRequest {
     public String idShowtime;
-    public List<String> seatIds;
+    public List<String> seatCodes;
 }
