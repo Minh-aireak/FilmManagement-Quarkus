@@ -6,14 +6,14 @@ import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "showtime_seat")
-@IdClass(ShowtimeSeatId.class)
-public class ShowtimeSeat {
+@Table(name = "room_seat")
+@IdClass(RoomSeatId.class)
+public class RoomSeat {
     @Id
-    public String idShowtime;
+    public String idRoom;
 
     @Id
     public String seatCode;
 
-    public String status;
+    public String typeSeat;
 }

@@ -9,6 +9,6 @@ public class Bill {
     @Id
     public String idBill;
     public String idAccount;
-    public LocalDateTime bookingTime;
+    public LocalDateTime createdAt;
     public int totalAmount;
 }

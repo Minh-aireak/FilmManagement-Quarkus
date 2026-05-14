@@ -7,8 +7,8 @@ import jakarta.persistence.Id;
 public class Ticket {
     @Id
     public String idTicket;
-    public String idShowtime;
-    public String idSeat;
-    public String idPrice;
     public String idBill;
+    public String idShowtime;
+    public String seatCode;
+    public int price;
 }
