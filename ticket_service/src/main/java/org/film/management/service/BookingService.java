@@ -27,10 +27,6 @@ public class BookingService {
     @Inject ShowtimePriceRepo showtimePriceRepo;
     @Inject RoomSeatRepo roomSeatRepo;
 
-    public List<Showtime> getShowtimesByMovie(String idMovie) {
-        return showtimeRepo.find("idMovie", idMovie).list();
-    }
-
     public List<String> getBookedSeats(String idShowtime) {
         List<ShowtimeSeat> bookedEntries = showtimeSeatRepo
                 .find("idShowtime = ?1 AND status = 'BOOKED'", idShowtime)
@@ -87,7 +83,7 @@ public class BookingService {
             showtimeSeatRepo.persist(newBookedSeat);
 
             Ticket ticket = new Ticket();
-            ticket.idTicket = "T_" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            ticket.idTicket = "Ticket_" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
             ticket.idShowtime = request.idShowtime;
             ticket.seatCode = seatCode;
             ticket.price = ticketPrice;
@@ -100,26 +96,6 @@ public class BookingService {
         bill.totalAmount = totalAmount;
 
         return new BookingResponseDTO(bill, tickets);
-    }
-    public List<Movie> getMoviesByDate(String dateStr) {
-        LocalDate parsedDate = LocalDate.parse(dateStr);
-
-        LocalDateTime startOfDay = parsedDate.atStartOfDay();
-        LocalDateTime endOfDay = parsedDate.atTime(23, 59, 59);
-
-        List<Showtime> showtimes = showtimeRepo.find("showTime >= ?1 AND showTime <= ?2", startOfDay, endOfDay).list();
-
-        List<String> movieIds = showtimes.stream().map(s -> s.idMovie).distinct().collect(Collectors.toList());
-        List<Movie> movies = new ArrayList<>();
-        for (String id : movieIds) {
-            Movie m = movieRepo.findById(id);
-            if (m != null) movies.add(m);
-        }
-        return movies;
-    }
-
-    public List<Showtime> getAllShowtimes() {
-        return showtimeRepo.listAll();
     }
 
     public BookingResponseDTO getBillDetail(String idBill) {

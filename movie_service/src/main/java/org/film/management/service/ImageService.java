@@ -17,6 +17,12 @@ public class ImageService {
 
     public String upload(FileUpload file) {
 
+        File dir = new File(UPLOAD_DIR);
+
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+
         String extension = "";
 
         if (file.fileName().contains(".")) {
@@ -31,7 +37,6 @@ public class ImageService {
         File dest = new File(UPLOAD_DIR + newName);
 
         try {
-
             Files.copy(
                     file.uploadedFile(),
                     dest.toPath()

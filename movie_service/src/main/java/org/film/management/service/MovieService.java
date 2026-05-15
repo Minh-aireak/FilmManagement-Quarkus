@@ -10,16 +10,27 @@ import jakarta.transaction.Transactional;
 import org.film.management.dto.request.MovieRequest;
 import org.film.management.dto.response.PageResponse;
 import org.film.management.entity.Movie;
+import org.film.management.entity.Showtime;
 import org.film.management.exception.AppException;
 import org.film.management.exception.ErrorCode;
 import org.film.management.repository.MovieRepository;
+import org.film.management.repository.ShowtimeRepository;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class MovieService {
 
     @Inject
     MovieRepository movieRepository;
+
+    @Inject
+    ShowtimeRepository showtimeRepository;
 
     public PageResponse<Movie> getPageMovies(int page, int size) {
 
@@ -31,6 +42,54 @@ public class MovieService {
                         .page(Page.of(page, size));
 
         return PageResponse.<Movie>builder()
+                .currentPage(page)
+                .pageSize(size)
+                .totalPages(query.pageCount())
+                .totalElement(query.count())
+                .data(query.list())
+                .build();
+    }
+
+    public List<Showtime> getShowtimesByMovie(String idMovie) {
+        movieRepository.findByIdOptional(idMovie)
+                .orElseThrow(() -> new AppException(ErrorCode.MOVIE_NOT_FOUND));
+
+        return showtimeRepository.find("idMovie", idMovie).list();
+    }
+
+    public PageResponse<Movie> getMoviesByDate(String dateStr, int page, int size) {
+        if (page < 0 || size <= 0) {
+            throw new AppException(ErrorCode.INVALID_PAGE);
+        }
+
+        LocalDate parsedDate = LocalDate.parse(dateStr);
+
+        LocalDateTime startOfDay = parsedDate.atStartOfDay();
+        LocalDateTime endOfDay = parsedDate.atTime(23, 59, 59);
+
+        PanacheQuery<Movie> query = movieRepository.find(
+                "idMovie IN (SELECT s.idMovie FROM Showtime s WHERE s.showTime >= ?1 AND s.showTime <= ?2)",
+                startOfDay, endOfDay
+        ).page(Page.of(page, size));
+
+        return PageResponse.<Movie>builder()
+                .currentPage(page)
+                .pageSize(size)
+                .totalPages(query.pageCount())
+                .totalElement(query.count())
+                .data(query.list())
+                .build();
+    }
+
+    public PageResponse<Showtime> getAllShowtimes(int page, int size) {
+        if (page < 0 || size <= 0) {
+            throw new AppException(ErrorCode.INVALID_PAGE);
+        }
+
+        PanacheQuery<Showtime> query = showtimeRepository.findAll()
+                .page(Page.of(page, size));
+
+        return PageResponse.<Showtime>builder()
                 .currentPage(page)
                 .pageSize(size)
                 .totalPages(query.pageCount())

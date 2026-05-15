@@ -38,14 +38,15 @@ public class AccountController {
         return result != null ? Response.ok(result).build() : Response.status(401).build();
     }
 
-    @DELETE
-    @Path("/{id}")
+    @POST
+    @Path("/{id}/toggle-active")
     @RolesAllowed("ADMIN")
-    public void delete(@PathParam("id") String id) {
-        boolean deleted = accountService.deleteAccount(id);
-        if (!deleted) {
-            throw new NotFoundException("Không tìm thấy tài khoản để xóa");
+    public void toggleActive(@PathParam("id") String id) {
+
+        boolean updated = accountService.toggleActive(id);
+
+        if (!updated) {
+            throw new NotFoundException("Không tìm thấy tài khoản");
         }
     }
-
 }
