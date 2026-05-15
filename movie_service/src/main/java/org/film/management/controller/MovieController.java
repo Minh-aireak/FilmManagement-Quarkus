@@ -91,6 +91,7 @@ public class MovieController {
                 .build();
     }
 
+
     @GET
     @Path("/{idMovie}")
     public ApiResponse<Movie> getMovieById(@PathParam("idMovie") String idMovie) {

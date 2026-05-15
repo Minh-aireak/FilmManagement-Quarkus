@@ -38,6 +38,9 @@ public class MovieService {
     @Inject
     ShowtimeSeatRepository showtimeSeatRepository;
 
+    @Inject
+    TicketRepository ticketRepository;
+
     public PageResponse<Movie> getPageMovies(int page, int size) {
 
         if (page < 0 || size <= 0) {
@@ -139,8 +142,17 @@ public class MovieService {
         return showtime;
     }
 
+    @Transactional
     public void deleteShowtime(String idShowtime) {
-
+        Showtime showtime = showtimeRepository.findById(idShowtime);
+        if (showtime == null) throw new RuntimeException("Lịch chiếu không tồn tại");
+        long ticketCount = ticketRepository.find("idShowtime", idShowtime).count();
+        if (ticketCount > 0) {
+            throw new RuntimeException("Không thể xóa lịch chiếu vì đã có vé được bán. Hãy hủy các hóa đơn liên quan trước!");
+        }
+        showtimeSeatRepository.delete("idShowtime", idShowtime);
+        showtimePriceRepository.deleteById(idShowtime);
+        showtimeRepository.delete(showtime);
     }
 
     public Movie getMovieById(String idMovie) {
