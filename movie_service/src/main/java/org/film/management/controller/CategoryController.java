@@ -44,11 +44,7 @@ public class CategoryController {
     @RolesAllowed("ADMIN")
     public ApiResponse<Void> deleteCategory(@QueryParam("idCategory") String idCategory) {
 
-        try {
-            categoryService.deleteCategory(idCategory);
-        } catch (Exception e) {
-            throw new AppException(ErrorCode.CATEGORY_IS_IN_USE);
-        }
+        categoryService.deleteCategory(idCategory);
 
         return ApiResponse.<Void>builder()
                 .message("Delete category successfully!")

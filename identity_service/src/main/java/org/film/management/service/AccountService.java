@@ -28,10 +28,17 @@ public class AccountService {
         return jwt.getClaim("idAccount");
     }
 
-    public LoginResponse authenticate(LoginRequest credentials) {
+    public LoginResponse authenticate(LoginRequest credentials) throws Exception {
         Account account = accountRepository.findByEmail(credentials.getEmail());
 
-        if (account == null || !BcryptUtil.matches(credentials.getPassword(), account.getPassword())) {
+        if (account == null) {
+            return null;
+        }
+
+        if (!account.isActive())
+            throw new Exception("Account was disable!");
+
+        if (!BcryptUtil.matches(credentials.getPassword(), account.getPassword())) {
             return null;
         }
 
@@ -55,6 +62,7 @@ public class AccountService {
         if (accountRepository.findByEmail(newAccount.getEmail()) != null) {
             return false;
         }
+
         newAccount.setRole(org.film.management.entity.Role.CUSTOMER);
         if (newAccount.getIdAccount() == null || newAccount.getIdAccount().trim().isEmpty()) {
             newAccount.setIdAccount("TK_" + UUID.randomUUID().toString().substring(0, 8));
@@ -89,7 +97,17 @@ public class AccountService {
     }
 
     @Transactional
-    public boolean deleteAccount(String id) {
-        return accountRepository.deleteById(id);
+    public boolean toggleActive(String id) {
+
+        Account account = accountRepository.findByIdOptional(id)
+                .orElse(null);
+
+        if (account == null) {
+            return false;
+        }
+
+        account.setActive(!account.isActive());
+
+        return true;
     }
 }

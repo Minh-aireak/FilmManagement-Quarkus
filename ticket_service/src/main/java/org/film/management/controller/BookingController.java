@@ -17,15 +17,9 @@ import java.util.List;
 public class BookingController {
 
     @Inject BookingService bookingService;
-    @GET
-    @Path("/movies/showtimes/{idMovie}")
-    public Response getShowtimesByMovie(@PathParam("idMovie") String idMovie) {
-        var result = bookingService.getShowtimesByMovie(idMovie);
-        return result.isEmpty() ? Response.status(Response.Status.NOT_FOUND).build() : Response.ok(result).build();
-    }
 
     @GET
-    @Path("/seats/showtimes/{idShowtime}")
+    @Path("/bookings/seats/{idShowtime}")
     public Response getBookedSeats(@PathParam("idShowtime") String idShowtime) {
         List<String> bookedSeats = bookingService.getBookedSeats(idShowtime);
 
@@ -33,7 +27,7 @@ public class BookingController {
     }
 
     @POST
-    @Path("/booking")
+    @Path("/bookings")
     @Authenticated
     public Response bookTickets(BookingRequest request) {
         try {
@@ -44,37 +38,7 @@ public class BookingController {
     }
 
     @GET
-    @Path("/date/{date}/movies")
-    public Response getMoviesByDate(@PathParam("date") String date) {
-        try {
-            var result = bookingService.getMoviesByDate(date);
-
-            if (result.isEmpty()) {
-                return Response.status(Response.Status.NOT_FOUND)
-                        .entity("Không có suất chiếu nào trong ngày " + date).build();
-            }
-
-            return Response.ok(result).build();
-        }
-        catch (java.time.format.DateTimeParseException e) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Sai định dạng ngày. Vui lòng nhập YYYY-MM-DD").build();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("Lỗi hệ thống: " + e.getMessage()).build();
-        }
-    }
-
-    @GET
-    @Path("/showtimes")
-    public Response getAllShowtimes() {
-        return Response.ok(bookingService.getAllShowtimes()).build();
-    }
-
-    @GET
-    @Path("/bills/{idBill}")
+    @Path("/tickets/bills/{idBill}")
     @Authenticated
     public Response getBillDetail(@PathParam("idBill") String idBill) {
         try {
@@ -85,7 +49,7 @@ public class BookingController {
     }
 
     @GET
-    @Path("/history")
+    @Path("/tickets/history")
     @Authenticated
     public Response getHistory() {
         try {
@@ -96,7 +60,7 @@ public class BookingController {
     }
 
     @DELETE
-    @Path("/cancel/{idBill}")
+    @Path("/tickets/cancel/{idBill}")
     @RolesAllowed({"ADMIN", "CUSTOMER"})
     public Response cancelBooking(@PathParam("idBill") String idBill) {
         try {
@@ -108,7 +72,7 @@ public class BookingController {
     }
 
     @GET
-    @Path("/admin/bills")
+    @Path("/tickets/admin/bills")
     @RolesAllowed("ADMIN")
     public Response getAllBills() {
         return Response.ok(bookingService.getAllBillsForAdmin()).build();

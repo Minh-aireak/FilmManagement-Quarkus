@@ -8,6 +8,7 @@ import org.film.management.entity.Account;
 import org.film.management.service.AccountService;
 
 import java.util.Map;
+import java.util.Objects;
 
 @Path("/auth")
 @Produces(MediaType.APPLICATION_JSON)
@@ -20,15 +21,20 @@ public class AuthController {
     @POST
     @Path("/login")
     public Response login(LoginRequest credentials) {
-        LoginResponse loginResponse = accountService.authenticate(credentials);
+        try {
+            LoginResponse loginResponse = accountService.authenticate(credentials);
 
-        if (loginResponse == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity(Map.of("error", "Sai email hoặc mật khẩu"))
-                    .build();
+            return Response.ok(Objects.requireNonNullElseGet(loginResponse, () -> Map.of(
+                    "success", false,
+                    "error", "Email hoặc mật khẩu không chính xác"
+            ))).build();
+
+        } catch (Exception e) {
+            return Response.ok(Map.of(
+                    "success", false,
+                    "error", e.getMessage()
+            )).build();
         }
-
-        return Response.ok(loginResponse).build();
     }
 
     @POST

@@ -43,4 +43,7 @@ public class Account {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    @Column(name = "isActive", nullable = false)
+    private boolean active = true;
 }

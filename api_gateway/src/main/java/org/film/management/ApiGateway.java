@@ -34,20 +34,20 @@ public class ApiGateway {
     @Route(path = "/auth/*")
     @Route(path = "/accounts/*")
     void identityRoute(RoutingContext context) {
-        forward(context, 8081, "Identity");
+        forward(context, 8080, "Identity");
     }
 
     @Route(path = "/movies/*")
     @Route(path = "/categories/*")
     @Route(path = "/images/*")
     void movieRoute(RoutingContext context) {
-        forward(context, 8082, "Movie");
+        forward(context, 8081, "Movie");
     }
 
     @Route(path = "/bookings/*")
     @Route(path = "/tickets/*")
     void ticketRoute(RoutingContext context) {
-        forward(context, 8083, "Ticket");
+        forward(context, 8082, "Ticket");
     }
 
     private void forward(RoutingContext context, int port, String serviceName) {
