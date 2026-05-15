@@ -83,7 +83,7 @@ public class BookingService {
             showtimeSeatRepo.persist(newBookedSeat);
 
             Ticket ticket = new Ticket();
-            ticket.idTicket = "Ticket_" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            ticket.idTicket = "Ticket_" + java.util.UUID.randomUUID().toString().toUpperCase();
             ticket.idShowtime = request.idShowtime;
             ticket.seatCode = seatCode;
             ticket.price = ticketPrice;
