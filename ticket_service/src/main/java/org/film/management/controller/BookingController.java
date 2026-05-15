@@ -5,7 +5,9 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.film.management.dto.AddShowtimeRequest;
 import org.film.management.dto.BookingRequest;
+import org.film.management.entity.Showtime;
 import org.film.management.service.BookingService;
 import io.quarkus.security.Authenticated;
 
@@ -76,5 +78,18 @@ public class BookingController {
     @RolesAllowed("ADMIN")
     public Response getAllBills() {
         return Response.ok(bookingService.getAllBillsForAdmin()).build();
+    }
+
+    @POST
+    @Path("/admin/showtimes")
+    @RolesAllowed("ADMIN")
+    public Response addShowtime(AddShowtimeRequest request) {
+        try {
+            Showtime created = bookingService.addShowtime(request);
+            return Response.status(Response.Status.CREATED).entity(created).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Lỗi khi tạo lịch chiếu: " + e.getMessage()).build();
+        }
     }
 }

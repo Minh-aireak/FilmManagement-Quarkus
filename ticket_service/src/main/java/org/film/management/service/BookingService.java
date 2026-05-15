@@ -83,7 +83,7 @@ public class BookingService {
             showtimeSeatRepo.persist(newBookedSeat);
 
             Ticket ticket = new Ticket();
-            ticket.idTicket = "Ticket_" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            ticket.idTicket = "Ticket_" + java.util.UUID.randomUUID().toString().toUpperCase();
             ticket.idShowtime = request.idShowtime;
             ticket.seatCode = seatCode;
             ticket.price = ticketPrice;
@@ -165,5 +165,37 @@ public class BookingService {
 
     public List<Bill> getAllBillsForAdmin() {
         return billRepo.find("order by createdAt desc").list();
+    }
+
+    @Transactional
+    public Showtime addShowtime(AddShowtimeRequest request) {
+
+        String idShowtime = "ST_" + UUID.randomUUID().toString().toUpperCase();
+
+        Showtime showtime = new Showtime();
+        showtime.idShowtime = idShowtime;
+        showtime.idMovie = request.idMovie;
+        showtime.idRoom = request.idRoom;
+        showtime.showTime = request.showTime;
+        showtimeRepo.persist(showtime);
+
+        ShowtimePrice price = new ShowtimePrice();
+        price.idShowtime = idShowtime;
+        price.standardPrice = request.standardPrice;
+        price.vipPrice = request.vipPrice;
+        price.couplePrice = request.couplePrice;
+        showtimePriceRepo.persist(price);
+
+        List<RoomSeat> roomSeats = roomSeatRepo.find("idRoom", request.idRoom).list();
+
+        for (RoomSeat rs : roomSeats) {
+            ShowtimeSeat stSeat = new ShowtimeSeat();
+            stSeat.idShowtime = idShowtime;
+            stSeat.seatCode = rs.seatCode;
+            stSeat.status = "AVAILABLE";
+            showtimeSeatRepo.persist(stSeat);
+        }
+
+        return showtime;
     }
 }
