@@ -7,21 +7,18 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
+import org.film.management.dto.request.AddShowtimeRequest;
 import org.film.management.dto.request.MovieRequest;
 import org.film.management.dto.response.PageResponse;
-import org.film.management.entity.Movie;
-import org.film.management.entity.Showtime;
+import org.film.management.entity.*;
 import org.film.management.exception.AppException;
 import org.film.management.exception.ErrorCode;
-import org.film.management.repository.MovieRepository;
-import org.film.management.repository.ShowtimeRepository;
+import org.film.management.repository.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.UUID;
 
 @ApplicationScoped
 public class MovieService {
@@ -31,6 +28,15 @@ public class MovieService {
 
     @Inject
     ShowtimeRepository showtimeRepository;
+
+    @Inject
+    ShowtimePriceRepository showtimePriceRepository;
+
+    @Inject
+    RoomSeatRepository roomSeatRepository;
+
+    @Inject
+    ShowtimeSeatRepository showtimeSeatRepository;
 
     public PageResponse<Movie> getPageMovies(int page, int size) {
 
@@ -96,6 +102,45 @@ public class MovieService {
                 .totalElement(query.count())
                 .data(query.list())
                 .build();
+    }
+
+    public Showtime createShowtime(AddShowtimeRequest request) {
+        String idShowtime = "ST_" + UUID.randomUUID().toString().toUpperCase();
+
+        Showtime showtime = Showtime.builder()
+                .idShowtime(idShowtime)
+                .idMovie(request.idMovie)
+                .idRoom(request.idRoom)
+                .showTime(request.showTime)
+                .build();
+
+        showtimeRepository.persist(showtime);
+
+        ShowtimePrice price = ShowtimePrice.builder()
+                .idShowtime(idShowtime)
+                .standardPrice(request.standardPrice)
+                .vipPrice(request.vipPrice)
+                .couplePrice(request.couplePrice)
+                .build();
+
+        showtimePriceRepository.persist(price);
+
+        List<RoomSeat> roomSeats = roomSeatRepository.find("idRoom", request.idRoom).list();
+
+        for (RoomSeat rs : roomSeats) {
+            ShowtimeSeat stSeat = ShowtimeSeat.builder()
+                    .idShowtime(idShowtime)
+                    .seatCode(rs.seatCode)
+                    .status("AVAILABLE")
+                    .build();
+            showtimeSeatRepository.persist(stSeat);
+        }
+
+        return showtime;
+    }
+
+    public void deleteShowtime(String idShowtime) {
+
     }
 
     public Movie getMovieById(String idMovie) {

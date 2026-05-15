@@ -7,6 +7,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 
 import jakarta.ws.rs.core.Response;
+import org.film.management.dto.request.AddShowtimeRequest;
 import org.film.management.dto.request.MovieRequest;
 import org.film.management.dto.response.ApiResponse;
 import org.film.management.dto.response.PageResponse;
@@ -67,6 +68,26 @@ public class MovieController {
         return ApiResponse.<PageResponse<Showtime>>builder()
                 .message("Get all showtimes successfully!")
                 .result(movieService.getAllShowtimes(page, size))
+                .build();
+    }
+
+    @POST
+    @Path("/showtimes")
+    @RolesAllowed("ADMIN")
+    public ApiResponse<Showtime> createShowtime(AddShowtimeRequest request) {
+        return ApiResponse.<Showtime>builder()
+                .message("Thêm lịch chiếu thành công!")
+                .result(movieService.createShowtime(request))
+                .build();
+    }
+
+    @DELETE
+    @Path("/showtimes/{idShowtime}")
+    @RolesAllowed("ADMIN")
+    public ApiResponse<Void> createShowtime(@PathParam("idShowtime") String idShowtime) {
+        movieService.deleteShowtime(idShowtime);
+        return ApiResponse.<Void>builder()
+                .message("Xóa lịch chiếu thành công!")
                 .build();
     }
 
