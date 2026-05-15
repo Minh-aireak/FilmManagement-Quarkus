@@ -46,6 +46,6 @@ public class ImageService {
             throw new AppException(ErrorCode.UPLOAD_ERROR);
         }
 
-        return "http://localhost:8081/images/" + newName;
+        return "http://localhost:8081/static/" + newName;
     }
 }
