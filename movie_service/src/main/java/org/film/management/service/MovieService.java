@@ -17,6 +17,7 @@ import org.film.management.repository.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,29 +27,25 @@ public class MovieService {
     @Inject
     MovieRepository movieRepository;
 
-    @Inject
-    ShowtimeRepository showtimeRepository;
-
-    @Inject
-    ShowtimePriceRepository showtimePriceRepository;
-
-    @Inject
-    RoomSeatRepository roomSeatRepository;
-
-    @Inject
-    ShowtimeSeatRepository showtimeSeatRepository;
-
-    @Inject
-    TicketRepository ticketRepository;
-
-    public PageResponse<Movie> getPageMovies(int page, int size) {
+    public PageResponse<Movie> getPageMovies(int page, int size, String category) {
 
         if (page < 0 || size <= 0) {
             throw new AppException(ErrorCode.INVALID_PAGE);
         }
 
-        PanacheQuery<Movie> query = movieRepository.findAll(Sort.descending("createdAt"))
-                        .page(Page.of(page, size));
+        PanacheQuery<Movie> query;
+        if (category != null && !category.isEmpty() && !category.equalsIgnoreCase("all")) {
+            List<String> categoryIds = Arrays.asList(category.split(","));
+            long count = categoryIds.size();
+            
+            // Tìm các phim có chứa TẤT CẢ các thể loại trong danh sách
+            query = movieRepository.find("idMovie IN (SELECT m2.idMovie FROM Movie m2 JOIN m2.categories c WHERE c.idCategory IN (?1) GROUP BY m2.idMovie HAVING COUNT(DISTINCT c.idCategory) = ?2)", 
+                    Sort.descending("createdAt"), categoryIds, count)
+                    .page(Page.of(page, size));
+        } else {
+            query = movieRepository.findAll(Sort.descending("createdAt"))
+                    .page(Page.of(page, size));
+        }
 
         return PageResponse.<Movie>builder()
                 .currentPage(page)
@@ -57,13 +54,6 @@ public class MovieService {
                 .totalElement(query.count())
                 .data(query.list())
                 .build();
-    }
-
-    public List<Showtime> getShowtimesByMovie(String idMovie) {
-        movieRepository.findByIdOptional(idMovie)
-                .orElseThrow(() -> new AppException(ErrorCode.MOVIE_NOT_FOUND));
-
-        return showtimeRepository.find("idMovie", idMovie).list();
     }
 
     public PageResponse<Movie> getMoviesByDate(String dateStr, int page, int size) {
@@ -88,71 +78,6 @@ public class MovieService {
                 .totalElement(query.count())
                 .data(query.list())
                 .build();
-    }
-
-    public PageResponse<Showtime> getAllShowtimes(int page, int size) {
-        if (page < 0 || size <= 0) {
-            throw new AppException(ErrorCode.INVALID_PAGE);
-        }
-
-        PanacheQuery<Showtime> query = showtimeRepository.findAll()
-                .page(Page.of(page, size));
-
-        return PageResponse.<Showtime>builder()
-                .currentPage(page)
-                .pageSize(size)
-                .totalPages(query.pageCount())
-                .totalElement(query.count())
-                .data(query.list())
-                .build();
-    }
-
-    public Showtime createShowtime(AddShowtimeRequest request) {
-        String idShowtime = "ST_" + UUID.randomUUID().toString().toUpperCase();
-
-        Showtime showtime = Showtime.builder()
-                .idShowtime(idShowtime)
-                .idMovie(request.idMovie)
-                .idRoom(request.idRoom)
-                .showTime(request.showTime)
-                .build();
-
-        showtimeRepository.persist(showtime);
-
-        ShowtimePrice price = ShowtimePrice.builder()
-                .idShowtime(idShowtime)
-                .standardPrice(request.standardPrice)
-                .vipPrice(request.vipPrice)
-                .couplePrice(request.couplePrice)
-                .build();
-
-        showtimePriceRepository.persist(price);
-
-        List<RoomSeat> roomSeats = roomSeatRepository.find("idRoom", request.idRoom).list();
-
-        for (RoomSeat rs : roomSeats) {
-            ShowtimeSeat stSeat = ShowtimeSeat.builder()
-                    .idShowtime(idShowtime)
-                    .seatCode(rs.seatCode)
-                    .status("AVAILABLE")
-                    .build();
-            showtimeSeatRepository.persist(stSeat);
-        }
-
-        return showtime;
-    }
-
-    @Transactional
-    public void deleteShowtime(String idShowtime) {
-        Showtime showtime = showtimeRepository.findById(idShowtime);
-        if (showtime == null) throw new RuntimeException("Lịch chiếu không tồn tại");
-        long ticketCount = ticketRepository.find("idShowtime", idShowtime).count();
-        if (ticketCount > 0) {
-            throw new AppException(ErrorCode.DELETE_SHOWTIME);
-        }
-        showtimeSeatRepository.delete("idShowtime", idShowtime);
-        showtimePriceRepository.deleteById(idShowtime);
-        showtimeRepository.delete(showtime);
     }
 
     public Movie getMovieById(String idMovie) {

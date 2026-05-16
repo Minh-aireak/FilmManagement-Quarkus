@@ -61,7 +61,7 @@ public class BookingController {
 
     @DELETE
     @Path("/tickets/cancel/{idBill}")
-    @RolesAllowed({"ADMIN", "CUSTOMER"})
+    @Authenticated
     public Response cancelBooking(@PathParam("idBill") String idBill) {
         try {
             bookingService.cancelBill(idBill);
@@ -74,8 +74,13 @@ public class BookingController {
     @GET
     @Path("/tickets/admin/bills")
     @RolesAllowed("ADMIN")
-    public Response getAllBills() {
-        return Response.ok(bookingService.getAllBillsForAdmin()).build();
+    public Response getAllBills(
+            @QueryParam("page") @DefaultValue("0") int page,
+            @QueryParam("size") @DefaultValue("10") int size,
+            @QueryParam("searchTerm") String searchTerm,
+            @QueryParam("idMovie") String idMovie,
+            @QueryParam("idShowtime") String idShowtime) {
+        return Response.ok(bookingService.getAllBillsForAdmin(page, size, searchTerm, idMovie, idShowtime)).build();
     }
 
 }

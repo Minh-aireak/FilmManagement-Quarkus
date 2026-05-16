@@ -6,8 +6,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import org.film.management.dto.response.ApiResponse;
 import org.film.management.entity.Category;
-import org.film.management.exception.AppException;
-import org.film.management.exception.ErrorCode;
 import org.film.management.service.CategoryService;
 
 import java.util.List;

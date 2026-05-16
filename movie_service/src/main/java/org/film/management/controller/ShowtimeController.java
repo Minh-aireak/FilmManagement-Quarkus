@@ -7,6 +7,7 @@ import jakarta.ws.rs.core.MediaType;
 import org.film.management.dto.request.AddShowtimeRequest;
 import org.film.management.dto.response.ApiResponse;
 import org.film.management.dto.response.PageResponse;
+import org.film.management.dto.response.ShowtimeResponse;
 import org.film.management.entity.Showtime;
 import org.film.management.service.ShowtimeService;
 
@@ -20,24 +21,27 @@ public class ShowtimeController {
 
     @GET
     @Path("/{idMovie}")
-    public ApiResponse<PageResponse<Showtime>> getShowtimesByMovie(
+    public ApiResponse<PageResponse<ShowtimeResponse>> getShowtimesByMovie(
             @PathParam("idMovie") String idMovie,
             @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("size") @DefaultValue("10") int size) {
-        return ApiResponse.<PageResponse<Showtime>>builder()
+        return ApiResponse.<PageResponse<ShowtimeResponse>>builder()
                 .message("Get showtime successfully!")
                 .result(showtimeService.getShowtimesByMovie(idMovie, page, size))
                 .build();
     }
 
     @GET
-    public ApiResponse<PageResponse<Showtime>> getAllShowtimes(
+    public ApiResponse<PageResponse<ShowtimeResponse>> getAllShowtimes(
             @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("size") @DefaultValue("10") int size,
-            @QueryParam("status") String status) {
-        return ApiResponse.<PageResponse<Showtime>>builder()
+            @QueryParam("status") String status,
+            @QueryParam("movieId") String movieId,
+            @QueryParam("date") String date,
+            @QueryParam("roomId") String roomId) {
+        return ApiResponse.<PageResponse<ShowtimeResponse>>builder()
                 .message("Get all showtimes successfully!")
-                .result(showtimeService.getAllShowtimes(page, size, status))
+                .result(showtimeService.getAllShowtimes(page, size, status, movieId, date, roomId))
                 .build();
     }
 

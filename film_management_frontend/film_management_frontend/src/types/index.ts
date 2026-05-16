@@ -73,6 +73,32 @@ export interface Bill {
   totalAmount: number;
 }
 
+export interface AdminBillResponse {
+  idBill: string;
+  idAccount: string;
+  createdAt: string;
+  totalAmount: number;
+  tickets: Ticket[];
+  movieName: string;
+  showTime: string;
+}
+
+export interface DashboardStatsResponse {
+  totalMovies: number;
+  totalTickets: number;
+  totalRevenue: number;
+  topMovies: {
+     movieName: string;
+     image: string;
+     ticketCount: number;
+     idMovie: string;
+   }[];
+  topTimeSlots: {
+    label: string;
+    count: number;
+  }[];
+}
+
 export interface Ticket {
   idTicket: string;
   idBill: string;
@@ -96,7 +122,7 @@ export interface Seat {
   roomId: string;
   row: string;
   column: number;
-  type: 'STANDARD' | 'VIP' | 'DOUBLE';
+  type: 'STANDARD' | 'VIP' | 'COUPLE';
   isBooked?: boolean;
 }
 
@@ -105,6 +131,8 @@ export interface Showtime {
   idMovie: string; 
   idRoom: string;
   showTime: string;
+  movieName?: string;
+  movieImage?: string;
 }
 
 export interface AddShowtimeRequest {

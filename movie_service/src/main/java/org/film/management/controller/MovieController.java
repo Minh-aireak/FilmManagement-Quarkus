@@ -24,11 +24,12 @@ public class MovieController {
     @GET
     public ApiResponse<PageResponse<Movie>> getPageMovies(
             @QueryParam("page") @DefaultValue("0") int page,
-            @QueryParam("size") @DefaultValue("10") int size) {
+            @QueryParam("size") @DefaultValue("10") int size,
+            @QueryParam("category") String category) {
 
         return ApiResponse.<PageResponse<Movie>>builder()
                 .message("Get movies successfully!")
-                .result(movieService.getPageMovies(page, size))
+                .result(movieService.getPageMovies(page, size, category))
                 .build();
 
     }

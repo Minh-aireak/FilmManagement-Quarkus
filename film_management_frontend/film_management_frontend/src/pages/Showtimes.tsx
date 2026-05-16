@@ -143,15 +143,6 @@ const Showtimes: React.FC = () => {
     fetchShowtimes();
   }, [selectedDate, page]);
 
-  if (isLoading && page === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
-        <Loader2 className="w-12 h-12 text-green-500 animate-spin" />
-        <p className="text-neutral-400 animate-pulse">Đang tải lịch chiếu...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-start">

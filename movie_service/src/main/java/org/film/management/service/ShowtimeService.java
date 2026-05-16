@@ -7,6 +7,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.film.management.dto.request.AddShowtimeRequest;
 import org.film.management.dto.response.PageResponse;
+import org.film.management.dto.response.ShowtimeResponse;
 import org.film.management.entity.*;
 import org.film.management.exception.AppException;
 import org.film.management.exception.ErrorCode;
@@ -14,6 +15,7 @@ import org.film.management.repository.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class ShowtimeService {
@@ -36,57 +38,112 @@ public class ShowtimeService {
     @Inject
     TicketRepository ticketRepository;
 
-    public PageResponse<Showtime> getShowtimesByMovie(String idMovie, int page, int size) {
+    public PageResponse<ShowtimeResponse> getShowtimesByMovie(String idMovie, int page, int size) {
         if (page < 0 || size <= 0) {
             throw new AppException(ErrorCode.INVALID_PAGE);
         }
 
-        movieRepository.findByIdOptional(idMovie)
+        Movie movie = movieRepository.findByIdOptional(idMovie)
                 .orElseThrow(() -> new AppException(ErrorCode.MOVIE_NOT_FOUND));
 
         PanacheQuery<Showtime> query = showtimeRepository
                 .find("idMovie = ?1 order by showTime desc", idMovie)
                 .page(Page.of(page, size));
 
-        return PageResponse.<Showtime>builder()
+        List<ShowtimeResponse> data = query.list().stream()
+                .map(st -> ShowtimeResponse.builder()
+                        .idShowtime(st.idShowtime)
+                        .showTime(st.showTime)
+                        .idMovie(st.idMovie)
+                        .idRoom(st.idRoom)
+                        .movieName(movie.getNameMovie())
+                        .movieImage(movie.getImage())
+                        .build())
+                .collect(Collectors.toList());
+
+        return PageResponse.<ShowtimeResponse>builder()
                 .currentPage(page)
                 .pageSize(size)
                 .totalPages(query.pageCount())
                 .totalElement(query.count())
-                .data(query.list())
+                .data(data)
                 .build();
     }
 
-    public PageResponse<Showtime> getAllShowtimes(int page, int size, String status) {
+    public PageResponse<ShowtimeResponse> getAllShowtimes(int page, int size, String status, String idMovie, String date, String idRoom) {
         if (page < 0 || size <= 0) {
             throw new AppException(ErrorCode.INVALID_PAGE);
         }
 
-        PanacheQuery<Showtime> query;
+        StringBuilder queryBuilder = new StringBuilder();
+        java.util.Map<String, Object> params = new java.util.HashMap<>();
         LocalDateTime now = LocalDateTime.now();
 
         if ("upcoming".equalsIgnoreCase(status)) {
-            query = showtimeRepository.find("showTime > ?1", now);
+            queryBuilder.append("showTime > :now");
+            params.put("now", now);
         } else if ("past".equalsIgnoreCase(status)) {
-            query = showtimeRepository.find("showTime <= ?1", now);
+            queryBuilder.append("showTime <= :now");
+            params.put("now", now);
+        } else if ("all".equalsIgnoreCase(status)) {
+            queryBuilder.append("1=1");
         } else {
             throw new AppException(ErrorCode.STATUS_SHOWTIME);
         }
 
+        if (idMovie != null && !idMovie.isEmpty() && !idMovie.equalsIgnoreCase("all")) {
+            queryBuilder.append(" AND idMovie = :idMovie");
+            params.put("idMovie", idMovie);
+        }
+
+        if (idRoom != null && !idRoom.isEmpty() && !idRoom.equalsIgnoreCase("all")) {
+            queryBuilder.append(" AND idRoom = :idRoom");
+            params.put("idRoom", idRoom);
+        }
+
+        if (date != null && !date.isEmpty()) {
+            try {
+                java.time.LocalDate localDate = java.time.LocalDate.parse(date);
+                LocalDateTime startOfDay = localDate.atStartOfDay();
+                LocalDateTime endOfDay = localDate.atTime(23, 59, 59);
+                queryBuilder.append(" AND showTime >= :startOfDay AND showTime <= :endOfDay");
+                params.put("startOfDay", startOfDay);
+                params.put("endOfDay", endOfDay);
+            } catch (Exception e) {
+                // Ignore invalid date format
+            }
+        }
+
+        String orderBy = " ORDER BY showTime DESC";
+        PanacheQuery<Showtime> query = showtimeRepository.find(queryBuilder.toString() + orderBy, params);
         query.page(Page.of(page, size));
 
-        return PageResponse.<Showtime>builder()
+        List<ShowtimeResponse> data = query.list().stream()
+                .map(st -> {
+                    Movie movie = movieRepository.findById(st.idMovie);
+                    return ShowtimeResponse.builder()
+                            .idShowtime(st.idShowtime)
+                            .showTime(st.showTime)
+                            .idMovie(st.idMovie)
+                            .idRoom(st.idRoom)
+                            .movieName(movie != null ? movie.getNameMovie() : "Phim không xác định")
+                            .movieImage(movie != null ? movie.getImage() : null)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return PageResponse.<ShowtimeResponse>builder()
                 .currentPage(page)
                 .pageSize(size)
                 .totalPages(query.pageCount())
                 .totalElement(query.count())
-                .data(query.list())
+                .data(data)
                 .build();
     }
 
     @Transactional
     public Showtime createShowtime(AddShowtimeRequest request) {
-        String idShowtime = "ST_" + UUID.randomUUID().toString().toUpperCase();
+        String idShowtime = "Showtime_" + UUID.randomUUID();
 
         Showtime showtime = Showtime.builder()
                 .idShowtime(idShowtime)

@@ -3,12 +3,14 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Save, Loader2, Image as ImageIcon, Film as MovieIcon, Clock, Languages, User, Users, Tag, X, Check, Upload } from 'lucide-react';
 import { movieService } from '../services/movie.service';
 import { useToast } from '../components/Toast';
+import { useCache } from '../context/CacheContext';
 import { type Category } from '../types';
 
 const AddFilm: React.FC = () => {
   const { id } = useParams();
   const isEditMode = !!id;
   const { showToast } = useToast();
+  const { setAdminFilmsCache, clearFilmListCache, setAdminShowtimesCache, clearShowtimesPageCache } = useCache();
   
   const [formData, setFormData] = useState({
     idMovie: '',
@@ -145,6 +147,13 @@ const AddFilm: React.FC = () => {
         await movieService.createMovie(movieData);
         showToast('Thêm phim thành công!', 'success');
       }
+
+      // Xóa cache để danh sách phim được cập nhật lại
+      setAdminFilmsCache(null);
+      clearFilmListCache();
+      setAdminShowtimesCache(null);
+      clearShowtimesPageCache();
+      
       navigate('/admin/movies');
     } catch (err: any) {
       const message = err.message || err.response?.data?.message || 'Đã xảy ra lỗi khi lưu phim.';
@@ -382,7 +391,7 @@ const AddFilm: React.FC = () => {
                     formData.categories.map((cat) => (
                       <span 
                         key={cat.idCategory}
-                        className="flex items-center gap-1 px-3 py-1 bg-green-600/20 border border-green-500/30 text-green-500 text-xs font-bold rounded-full group animate-in zoom-in-95 duration-200"
+                        className="flex items-center gap-1.5 px-2.5 py-1 bg-green-500/5 border border-green-500/20 text-green-500 text-[10px] font-black uppercase tracking-tight rounded-lg group animate-in zoom-in-95 duration-200"
                       >
                         {cat.idCategory}
                         <button
@@ -408,10 +417,10 @@ const AddFilm: React.FC = () => {
                         key={cat.idCategory}
                         type="button"
                         onClick={() => handleCategoryToggle(cat.idCategory)}
-                        className={`flex items-center justify-between px-3 py-2 rounded-lg border text-xs transition-all ${
+                        className={`flex items-center justify-between px-3 py-2.5 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
                           isSelected
-                            ? 'bg-green-600 border-green-500 text-white shadow-lg shadow-green-600/10'
-                            : 'bg-neutral-800 border-neutral-700 text-neutral-400 hover:border-neutral-600'
+                            ? 'bg-green-600 border-green-500 text-white shadow-[0_8px_20px_-4px_rgba(34,197,94,0.4)] scale-105'
+                            : 'bg-neutral-900 border-neutral-800 text-neutral-500 hover:bg-neutral-800 hover:text-neutral-300'
                         }`}
                       >
                         <span>{cat.idCategory}</span>

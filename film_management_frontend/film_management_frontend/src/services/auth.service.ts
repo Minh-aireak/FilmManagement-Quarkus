@@ -44,11 +44,6 @@ export const authService = {
     return response.data;
   },
 
-  deleteAccount: async (idAccount: string) => {
-    const response = await api.delete<any>(`/accounts/${idAccount}`);
-    return response.data;
-  },
-
   toggleActive: async (idAccount: string) => {
     const response = await api.post<any>(`/accounts/${idAccount}/toggle-active`, {}, {
       headers: { 'Content-Type': 'application/json' }

@@ -1,10 +1,16 @@
 package org.film.management.service;
 
+import io.quarkus.hibernate.orm.panache.PanacheQuery;
+import io.quarkus.panache.common.Page;
+import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.jwt.JsonWebToken;
-import org.film.management.dto.*;
+import org.film.management.dto.AdminBillResponseDTO;
+import org.film.management.dto.BookingRequest;
+import org.film.management.dto.BookingResponseDTO;
+import org.film.management.dto.PageResponse;
 import org.film.management.entity.*;
 import org.film.management.repository.*;
 
@@ -44,7 +50,7 @@ public class BookingService {
         if (priceConfig == null) throw new RuntimeException("Chưa cấu hình giá cho lịch chiếu này");
 
         Bill bill = new Bill();
-        bill.idBill = "Bill_" + java.util.UUID.randomUUID().toString().toUpperCase();
+        bill.idBill = "Bill_" + java.util.UUID.randomUUID();
 
         if (jwt != null && jwt.containsClaim("idAccount")) {
             bill.idAccount = jwt.getClaim("idAccount");
@@ -81,7 +87,7 @@ public class BookingService {
             showtimeSeatRepo.persist(newBookedSeat);
 
             Ticket ticket = new Ticket();
-            ticket.idTicket = "Ticket_" + java.util.UUID.randomUUID().toString().toUpperCase();
+            ticket.idTicket = "Ticket_" + java.util.UUID.randomUUID();
             ticket.idShowtime = request.idShowtime;
             ticket.seatCode = seatCode;
             ticket.price = ticketPrice;
@@ -161,8 +167,56 @@ public class BookingService {
         billRepo.delete(bill);
     }
 
-    public List<Bill> getAllBillsForAdmin() {
-        return billRepo.find("order by createdAt desc").list();
+    public PageResponse<AdminBillResponseDTO> getAllBillsForAdmin(int page, int size, String searchTerm, String idMovie, String idShowtime) {
+        StringBuilder queryStr = new StringBuilder("SELECT b FROM Bill b WHERE 1=1");
+        java.util.Map<String, Object> params = new java.util.HashMap<>();
+
+        if (searchTerm != null && !searchTerm.isEmpty()) {
+            queryStr.append(" AND (b.idBill LIKE :searchTerm OR b.idAccount LIKE :searchTerm)");
+            params.put("searchTerm", "%" + searchTerm + "%");
+        }
+
+        if (idShowtime != null && !idShowtime.equals("all")) {
+            queryStr.append(" AND b.idBill IN (SELECT t.idBill FROM Ticket t WHERE t.idShowtime = :idShowtime)");
+            params.put("idShowtime", idShowtime);
+        } else if (idMovie != null && !idMovie.equals("all")) {
+            queryStr.append(" AND b.idBill IN (SELECT t.idBill FROM Ticket t WHERE t.idShowtime IN (SELECT s.idShowtime FROM Showtime s WHERE s.idMovie = :idMovie))");
+            params.put("idMovie", idMovie);
+        }
+
+        queryStr.append(" ORDER BY b.createdAt DESC");
+
+        PanacheQuery<Bill> query = billRepo.find(queryStr.toString(), params);
+        
+        List<Bill> billList = query.page(Page.of(page, size)).list();
+        
+        List<AdminBillResponseDTO> data = billList.stream().map(bill -> {
+            List<Ticket> tickets = ticketRepo.find("idBill", bill.idBill).list();
+            String movieName = "Phim không xác định";
+            LocalDateTime showTime = null;
+            
+            if (!tickets.isEmpty()) {
+                String idShowtimeFromTicket = tickets.get(0).idShowtime;
+                Showtime showtime = showtimeRepo.findById(idShowtimeFromTicket);
+                if (showtime != null) {
+                    showTime = showtime.showTime;
+                    Movie movie = movieRepo.findById(showtime.idMovie);
+                    if (movie != null) {
+                        movieName = movie.nameMovie;
+                    }
+                }
+            }
+            
+            return new AdminBillResponseDTO(bill, tickets, movieName, showTime);
+        }).collect(Collectors.toList());
+        
+        return PageResponse.<AdminBillResponseDTO>builder()
+                .currentPage(page)
+                .pageSize(size)
+                .totalPages(query.pageCount())
+                .totalElement(query.count())
+                .data(data)
+                .build();
     }
 
 }

@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Plus, Search, Trash2, Tag, Loader2, 
-  AlertCircle, CheckCircle2, X
-} from 'lucide-react';
+import { Plus, Search, Trash2, Tag, Loader2, X } from 'lucide-react';
 import { movieService } from '../services/movie.service';
 import { type Category } from '../types';
 import { useToast } from '../components/Toast';
@@ -68,16 +65,20 @@ const AdminCategories: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Quản lý thể loại</h1>
-          <p className="text-neutral-400 mt-2">Thêm, xóa và quản lý các danh mục phim trong hệ thống</p>
+      {/* Admin Header */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-gradient-to-br from-neutral-900 to-neutral-950 p-8 rounded-[2.5rem] border border-neutral-800 shadow-2xl relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 blur-[100px] -mr-32 -mt-32 rounded-full" />
+        <div className="relative z-10">
+          <h1 className="text-4xl font-black text-white italic uppercase tracking-tighter flex items-center gap-3">
+            <Tag className="w-10 h-10 text-green-500" /> Quản lý thể loại
+          </h1>
         </div>
         <button 
           onClick={() => setIsAdding(true)}
-          className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-green-600/20 active:scale-95"
+          className="relative z-10 flex items-center gap-2 px-8 py-4 bg-green-600 hover:bg-green-700 text-white font-black uppercase tracking-widest text-sm rounded-2xl transition-all shadow-lg shadow-green-600/20 active:scale-95 group/btn"
         >
-          <Plus className="w-5 h-5" /> Thêm thể loại
+          <Plus className="w-5 h-5 group-hover/btn:rotate-90 transition-transform" />
+          Thêm thể loại
         </button>
       </div>
 
@@ -157,40 +158,54 @@ const AdminCategories: React.FC = () => {
       )}
 
       {/* Content */}
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-20">
-          <Loader2 className="w-10 h-10 text-green-500 animate-spin mb-4" />
-          <p className="text-neutral-400">Đang tải danh sách thể loại...</p>
-        </div>
-      ) : filteredCategories.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredCategories.map((cat) => (
-            <div 
-              key={cat.idCategory} 
-              className="bg-neutral-900 p-6 rounded-2xl border border-neutral-800 hover:border-purple-500/30 transition-all group flex justify-between items-center"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
-                  <Tag className="w-5 h-5" />
-                </div>
-                <span className="text-lg font-bold text-white tracking-tight italic uppercase">{cat.idCategory}</span>
-              </div>
-              <button
-                onClick={() => handleDelete(cat.idCategory)}
-                className="p-2 text-neutral-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                title="Xóa thể loại"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
+      <div className="relative min-h-[300px]">
+        {/* Loading overlay */}
+        {isLoading && categories.length > 0 && (
+          <div className="absolute inset-0 bg-neutral-900/40 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-3xl">
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 className="w-10 h-10 text-green-500 animate-spin" />
+              <p className="text-white font-bold text-sm tracking-widest uppercase italic">Đang tải...</p>
             </div>
-          ))}
+          </div>
+        )}
+
+        <div className={`transition-opacity duration-300 ${isLoading ? 'opacity-30' : 'opacity-100'}`}>
+          {isLoading && categories.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <Loader2 className="w-10 h-10 text-green-500 animate-spin mb-4" />
+              <p className="text-neutral-400 font-bold tracking-widest uppercase italic">Đang khởi tạo dữ liệu...</p>
+            </div>
+          ) : filteredCategories.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredCategories.map((cat) => (
+                <div 
+                  key={cat.idCategory} 
+                  className="bg-neutral-900 p-6 rounded-2xl border border-neutral-800 hover:border-purple-500/30 transition-all group flex justify-between items-center"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
+                      <Tag className="w-5 h-5" />
+                    </div>
+                    <span className="text-lg font-bold text-white tracking-tight italic uppercase">{cat.idCategory}</span>
+                  </div>
+                  <button
+                    onClick={() => handleDelete(cat.idCategory)}
+                    className="p-2 text-neutral-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                    title="Xóa thể loại"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-neutral-900 rounded-3xl border border-dashed border-neutral-800 p-20 text-center">
+              <Tag className="w-16 h-16 text-neutral-800 mx-auto mb-4" />
+              <p className="text-neutral-500 italic">Không tìm thấy thể loại nào phù hợp.</p>
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="bg-neutral-900 rounded-3xl border border-dashed border-neutral-800 p-20 text-center">
-          <Tag className="w-16 h-16 text-neutral-800 mx-auto mb-4" />
-          <p className="text-neutral-500 italic">Không tìm thấy thể loại nào phù hợp.</p>
-        </div>
-      )}
+      </div>
     </div>
   );
 };

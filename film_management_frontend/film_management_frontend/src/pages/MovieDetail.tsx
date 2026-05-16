@@ -1,18 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { format, addDays, startOfDay } from 'date-fns';
+import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { MapPin, Loader2, Calendar, Clock, ChevronLeft } from 'lucide-react';
+import { MapPin, Calendar, Clock, ChevronLeft } from 'lucide-react';
 import { movieService } from '../services/movie.service';
 import { type Showtime, type Movie } from '../types';
+import { useCache } from '../context/CacheContext';
 
 const MovieDetail: React.FC = () => {
   const { movieId } = useParams<{ movieId: string }>();
   const navigate = useNavigate();
+  const { movieDetailCache, setMovieDetailCache } = useCache();
   
-  const [movie, setMovie] = useState<Movie | null>(null);
-  const [allShowtimes, setAllShowtimes] = useState<Showtime[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const cachedData = movieId ? movieDetailCache[movieId] : null;
+  
+  const [movie, setMovie] = useState<Movie | null>(cachedData?.movie || null);
+  const [allShowtimes, setAllShowtimes] = useState<Showtime[]>(cachedData?.showtimes || []);
+  const [isLoading, setIsLoading] = useState(!cachedData);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -20,7 +24,7 @@ const MovieDetail: React.FC = () => {
       if (!movieId) return;
       
       try {
-        setIsLoading(true);
+        if (!cachedData) setIsLoading(true);
         setError(null);
         
         // 1. Fetch movie info
@@ -29,7 +33,6 @@ const MovieDetail: React.FC = () => {
           setError('Không tìm thấy thông tin phim.');
           return;
         }
-        setMovie(movieData);
 
         // 2. Fetch all showtimes for this movie
         const result = await movieService.getShowtimesByMovie(movieId, 0, 100);
@@ -40,7 +43,9 @@ const MovieDetail: React.FC = () => {
           new Date(b.showTime).getTime() - new Date(a.showTime).getTime()
         );
         
+        setMovie(movieData);
         setAllShowtimes(sortedShowtimes);
+        setMovieDetailCache(movieId, { movie: movieData, showtimes: sortedShowtimes });
         
       } catch (err) {
         console.error('Fetch movie detail error:', err);
@@ -66,16 +71,7 @@ const MovieDetail: React.FC = () => {
   // Lấy danh sách ngày đã sắp xếp giảm dần
    const sortedDates = Object.keys(groupedShowtimes).sort((a, b) => b.localeCompare(a));
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <Loader2 className="w-12 h-12 text-green-500 animate-spin" />
-        <p className="text-neutral-400 animate-pulse">Đang tải thông tin phim...</p>
-      </div>
-    );
-  }
-
-  if (error || !movie) {
+  if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
         <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-8 text-center">
@@ -107,8 +103,8 @@ const MovieDetail: React.FC = () => {
       <div className="bg-neutral-900 rounded-[2.5rem] border border-neutral-800 overflow-hidden shadow-2xl relative">
         <div className="absolute inset-0">
           <img 
-            src={movie.image} 
-            alt={movie.nameMovie} 
+            src={movie?.image} 
+            alt={movie?.nameMovie} 
             className="w-full h-full object-cover blur-md opacity-20 scale-110" 
           />
           <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/90 to-transparent" />
@@ -118,8 +114,8 @@ const MovieDetail: React.FC = () => {
           {/* Poster */}
           <div className="w-48 md:w-72 aspect-[2/3] rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-neutral-700 flex-shrink-0 z-10 transform -rotate-1 md:hover:rotate-0 transition-transform duration-500">
             <img 
-              src={movie.image} 
-              alt={movie.nameMovie} 
+              src={movie?.image} 
+              alt={movie?.nameMovie} 
               className="w-full h-full object-cover" 
             />
           </div>
@@ -127,7 +123,7 @@ const MovieDetail: React.FC = () => {
           {/* Details */}
           <div className="flex-grow space-y-6 z-10 text-center md:text-left">
             <div className="flex flex-wrap justify-center md:justify-start gap-2">
-              {movie.categories?.map(cat => (
+              {movie?.categories?.map(cat => (
                 <span key={cat.idCategory} className="px-4 py-1.5 bg-green-500/10 border border-green-500/20 text-green-500 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
                   {cat.idCategory}
                 </span>
@@ -135,36 +131,36 @@ const MovieDetail: React.FC = () => {
             </div>
             
             <h1 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter leading-none">
-              {movie.nameMovie}
+              {movie?.nameMovie}
             </h1>
             
             <div className="flex flex-wrap justify-center md:justify-start items-center gap-6 text-neutral-300">
               <div className="flex items-center gap-2 bg-neutral-800/50 px-3 py-1.5 rounded-lg border border-neutral-700">
                 <Clock className="w-4 h-4 text-green-500" />
-                <span className="font-bold">{movie.duration} phút</span>
+                <span className="font-bold">{movie?.duration} phút</span>
               </div>
               <div className="flex items-center gap-2 bg-neutral-800/50 px-3 py-1.5 rounded-lg border border-neutral-700">
                 <MapPin className="w-4 h-4 text-green-500" />
                 <span className="font-bold">Aireak Cinema</span>
               </div>
               <div className="px-3 py-1.5 bg-neutral-800/50 border border-neutral-700 rounded-lg text-xs font-black text-neutral-400">
-                {movie.language}
+                {movie?.language}
               </div>
             </div>
 
             <div className="space-y-4 max-w-3xl">
               <p className="text-neutral-400 text-base md:text-lg leading-relaxed italic">
-                "{movie.description}"
+                "{movie?.description}"
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-neutral-800/50">
                 <div>
                   <p className="text-[10px] uppercase font-black text-neutral-500 tracking-widest mb-1">Đạo diễn</p>
-                  <p className="text-white font-bold">{movie.author}</p>
+                  <p className="text-white font-bold">{movie?.author}</p>
                 </div>
                 <div>
                   <p className="text-[10px] uppercase font-black text-neutral-500 tracking-widest mb-1">Diễn viên</p>
-                  <p className="text-white font-bold">{movie.actors}</p>
+                  <p className="text-white font-bold">{movie?.actors}</p>
                 </div>
               </div>
             </div>

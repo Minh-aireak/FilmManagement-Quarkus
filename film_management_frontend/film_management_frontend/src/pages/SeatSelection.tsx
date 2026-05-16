@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Info, Loader2 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { bookingService } from '../services/ticket.service';
@@ -10,7 +9,7 @@ import { type Showtime, type Seat, type Movie, type BookingResponseDTO } from '.
 import { useToast } from '../components/Toast';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { CheckCircle2, Ticket as TicketIcon, CreditCard, Download, Calendar, Clock, MapPin } from 'lucide-react';
+import { CheckCircle2, Ticket as TicketIcon, Calendar, Clock, MapPin, X, ChevronRight, Loader2 } from 'lucide-react';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -26,25 +25,25 @@ interface RoomConfig {
 const ROOM_CONFIGS: Record<string | number, RoomConfig> = {
   1: {
     name: "Phòng Standard - Room 1",
-    columns: 5,
-    aisles: [],
-    description: "Phòng chiếu 5x5, không gian tiêu chuẩn"
+    columns: 10,
+    aisles: [5],
+    description: "Phòng chiếu 10x10, không gian tiêu chuẩn"
   },
   2: {
     name: "Phòng Comfort - Room 2",
-    columns: 6,
-    aisles: [],
-    description: "Phòng chiếu 6x6, hàng A đặc biệt với 4 ghế"
+    columns: 12,
+    aisles: [3, 9],
+    description: "Phòng chiếu 12x10, không gian rộng rãi"
   },
   3: {
     name: "Phòng Premium - Room 3",
-    columns: 5,
-    aisles: [],
-    description: "Phòng chiếu 5x5, hàng A đặc biệt với 3 ghế"
+    columns: 8,
+    aisles: [4],
+    description: "Phòng chiếu 8x8, ghế ngồi cao cấp"
   }
 };
 
-const ROWS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
+const ROWS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
 
 const SeatSelection: React.FC = () => {
   const { showtimeId } = useParams();
@@ -70,7 +69,7 @@ const SeatSelection: React.FC = () => {
         const bookedSeatIds = await bookingService.getBookedSeats(showtimeId);
         
         // 2. Lấy thông tin suất chiếu
-        const allShowtimes = await movieService.getAllShowtimes(0, 10);
+        const allShowtimes = await movieService.getAllShowtimes(0, 100);
         const currentShowtime = allShowtimes.data.find((st: Showtime) => st.idShowtime === showtimeId);
         
         if (!currentShowtime) {
@@ -84,41 +83,56 @@ const SeatSelection: React.FC = () => {
          setMovie(movieData);
 
          // 4. Tạo danh sách tất cả ghế dựa trên cấu hình phòng
-         // Thử lấy số từ ID phòng (ví dụ "ROOM1" -> 1)
          const roomRawId = currentShowtime.idRoom;
          const roomNumericId = parseInt(roomRawId.replace(/[^0-9]/g, '')) || 1;
          
-         // Lấy cấu hình phòng, nếu không có thì lấy mặc định là phòng 1
          const config = ROOM_CONFIGS[roomNumericId] || ROOM_CONFIGS[1];
          const roomId = roomNumericId;
 
          const allSeats: Seat[] = [];
-         const rows = roomId === 2 ? ['A', 'B', 'C', 'D', 'E', 'F'] : ['A', 'B', 'C', 'D', 'E'];
+         const rows = roomId === 2 ? ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'] : ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
          
          rows.forEach(row => {
-           for (let col = 1; col <= config.columns; col++) {
-             const seatId = `${row}${col}`;
+           let currentSlot = 1;
+           let seatInRowIndex = 1;
+           
+           while (currentSlot <= config.columns) {
+             let seatType: 'STANDARD' | 'VIP' | 'COUPLE' = 'STANDARD';
              
-             let seatType: 'STANDARD' | 'VIP' | 'DOUBLE' = 'STANDARD';
-             if (roomId === 1) {
-               if (row === 'E' && col <= 4) seatType = 'DOUBLE';
-               else if (row === 'C' || row === 'D') seatType = 'VIP';
-             } else if (roomId === 2) {
-               if (row === 'F') seatType = 'DOUBLE';
-               else if (row === 'A' || row === 'D' || row === 'E') seatType = 'VIP';
-             } else if (roomId === 3) {
-               if (row === 'E' && col <= 4) seatType = 'DOUBLE';
-               else if (row === 'A' || row === 'D') seatType = 'VIP';
+             // Phân bổ loại ghế dựa trên hàng
+             if (row === 'G' || row === 'H' || row === 'I' || row === 'J') {
+               seatType = 'COUPLE';
+             } else if (row === 'D' || row === 'E' || row === 'F') {
+               seatType = 'VIP';
              }
 
+             // Độ rộng của ghế tính theo slot (theo yêu cầu: couple chiếm 2 slot)
+             const seatWidth = seatType === 'COUPLE' ? 2 : 1;
+             
+             // Kiểm tra nếu không đủ slot trống còn lại cho ghế Couple
+             if (currentSlot + seatWidth - 1 > config.columns) {
+               // Nếu là ghế Couple mà không đủ chỗ, chuyển thành ghế thường nếu còn ít nhất 1 slot
+               if (seatType === 'COUPLE' && currentSlot <= config.columns) {
+                 seatType = 'STANDARD';
+               } else {
+                 // Không còn đủ chỗ cho bất kỳ ghế nào
+                 break;
+               }
+             }
+
+             const seatId = `${row}${seatInRowIndex}`;
+             
              allSeats.push({
                id: seatId,
                roomId: currentShowtime.idRoom.toString(),
                row: row,
-               column: col,
+               column: seatInRowIndex,
                type: seatType,
                isBooked: bookedSeatIds.includes(seatId)
              });
+
+             currentSlot += (seatType === 'COUPLE' ? 2 : 1);
+             seatInRowIndex++;
            }
          });
 
@@ -149,7 +163,7 @@ const SeatSelection: React.FC = () => {
       // Giả sử giá cơ bản là 1, bạn có thể thay đổi tùy logic backend
       let price = 100000; // Giá mặc định nếu không lấy được từ showtime
       if (seat.type === 'VIP') price += 30000;
-      if (seat.type === 'DOUBLE') price += 100000;
+      if (seat.type === 'COUPLE') price += 100000;
       return total + price;
     }, 0);
   };
@@ -184,15 +198,6 @@ const SeatSelection: React.FC = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
-        <Loader2 className="w-12 h-12 text-green-500 animate-spin" />
-        <p className="text-neutral-400 animate-pulse">Đang tải sơ đồ ghế...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-8">
       {/* Progress Bar */}
@@ -224,57 +229,59 @@ const SeatSelection: React.FC = () => {
       </div>
 
       {currentStep === 1 ? (
-        <div className="flex flex-col lg:flex-row gap-8 min-h-[80vh]">
+        <div className="flex flex-col lg:flex-row gap-10 min-h-[80vh]">
       {/* Left side: Seat Map */}
-      <div className="flex-grow bg-neutral-900 rounded-2xl border border-neutral-800 p-8 shadow-2xl">
-        <div className="flex items-center gap-4 mb-8 pb-4 border-b border-neutral-800 overflow-x-auto">
-          <div className="flex items-center gap-4 text-sm font-medium whitespace-nowrap">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-orange-500 rounded-sm border border-orange-400" />
-              <span>Ghế đang chọn</span>
+      <div className="flex-grow bg-neutral-900 rounded-[2.5rem] border border-neutral-800 p-10 shadow-2xl">
+        <div className="flex justify-center items-center mb-12 pb-8 border-b border-neutral-800">
+          <div className="flex flex-wrap justify-center items-center gap-x-10 gap-y-6 text-xs font-black uppercase tracking-[0.15em] text-neutral-400">
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 bg-emerald-500 rounded-lg shadow-[0_0_15px_rgba(16,185,129,0.4)]" />
+              <span>Đang chọn</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-neutral-700 rounded-sm border border-neutral-600" />
-              <span>Ghế có thể chọn</span>
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 bg-zinc-700 rounded-lg border border-zinc-600" />
+              <span>Thường</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-neutral-900 rounded-sm border-2 border-red-900" />
-              <span>Ghế VIP</span>
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 bg-amber-500 rounded-lg shadow-[0_0_15px_rgba(245,158,11,0.4)]" />
+              <span>VIP</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-12 h-5 bg-neutral-700 rounded-sm border border-neutral-600" />
-              <span className="text-xs">Ghế đôi (Couple)</span>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-6 bg-rose-500 rounded-lg shadow-[0_0_15px_rgba(244,63,94,0.4)]" />
+              <span>Couple</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-orange-700/50 rounded-sm border border-orange-800/50" />
-              <span>Ghế đã bán</span>
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 bg-neutral-800 rounded-lg border border-neutral-700 flex items-center justify-center">
+                <X className="w-4 h-4 text-neutral-600" />
+              </div>
+              <span>Đã đặt</span>
             </div>
           </div>
         </div>
 
         {/* Screen */}
-        <div className="relative mb-20">
-          <div className="w-full h-2 bg-gradient-to-b from-neutral-600 to-transparent rounded-full blur-sm opacity-50" />
-          <div className="w-[80%] h-8 bg-neutral-800 mx-auto rounded-b-[100px] border-t-4 border-red-950 flex items-center justify-center shadow-[0_10px_30px_rgba(255,255,255,0.05)]">
-            <span className="text-white font-bold tracking-[0.5em] text-sm">SCREEN</span>
+        <div className="relative mb-24">
+          <div className="w-full h-2 bg-gradient-to-b from-green-500/30 to-transparent rounded-full blur-md" />
+          <div className="w-[85%] h-12 bg-neutral-800 mx-auto rounded-b-[120px] border-t-4 border-green-600 flex items-center justify-center shadow-[0_20px_40px_rgba(34,197,94,0.1)]">
+            <span className="text-white font-black tracking-[1em] text-sm italic">SCREEN</span>
           </div>
         </div>
 
         {/* Seats Grid */}
-        <div className="flex flex-col gap-3 items-center select-none overflow-x-auto py-4">
+        <div className="flex flex-col gap-4 items-center select-none overflow-x-auto py-8">
           {ROWS.map(rowLabel => {
             const rowSeats = seats.filter(s => s.row === rowLabel).sort((a, b) => a.column - b.column);
             if (rowSeats.length === 0) return null;
 
             return (
-              <div key={rowLabel} className="flex gap-3 items-center">
-                <span className="w-6 text-center text-xs font-bold text-neutral-600">{rowLabel}</span>
+              <div key={rowLabel} className="flex gap-4 items-center">
+                <span className="w-8 text-center text-sm font-black text-neutral-500">{rowLabel}</span>
                 <div className="flex gap-2">
                   {rowSeats.map((seat) => {
                     const isBooked = seat.isBooked;
                     const isSelected = !!selectedSeats.find(s => s.id === seat.id);
                     const isVIP = seat.type === 'VIP';
-                    const isDouble = seat.type === 'DOUBLE';
+                    const isCouple = seat.type === 'COUPLE';
 
                     return (
                       <button
@@ -282,26 +289,28 @@ const SeatSelection: React.FC = () => {
                         disabled={isBooked}
                         onClick={() => toggleSeat(seat)}
                         className={cn(
-                          "relative flex items-center justify-center text-[10px] font-bold transition-all duration-200 rounded-sm",
-                          isDouble ? "w-[72px] h-8" : "w-8 h-8",
+                          "relative flex items-center justify-center text-xs font-black transition-all duration-300 rounded-xl",
+                          isCouple ? "w-[88px] h-10" : "w-10 h-10",
                           isBooked 
-                            ? "bg-orange-900/30 border border-orange-900/50 text-orange-900/50 cursor-not-allowed"
+                            ? "bg-neutral-800 border border-neutral-700 text-neutral-600 cursor-not-allowed"
                             : isSelected
-                              ? "bg-orange-500 border border-orange-400 text-white shadow-[0_0_15px_rgba(249,115,22,0.4)]"
-                              : isVIP
-                                ? "bg-neutral-800 border-2 border-red-900 hover:border-green-500 text-neutral-400"
-                                : "bg-neutral-700 border border-neutral-600 hover:border-green-500 text-neutral-400"
+                              ? "bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.5)] scale-110 z-10"
+                              : isCouple
+                                ? "bg-rose-500 hover:bg-rose-400 text-white shadow-lg shadow-rose-500/10 hover:shadow-rose-500/30"
+                                : isVIP
+                                  ? "bg-amber-500 hover:bg-amber-400 text-white shadow-lg shadow-amber-500/10 hover:shadow-amber-500/30"
+                                  : "bg-zinc-700 hover:bg-zinc-600 text-zinc-300 hover:text-white"
                         )}
                       >
-                        {seat.column}
+                        {isBooked ? <X className="w-4 h-4" /> : seat.column}
                         {isVIP && !isSelected && !isBooked && (
-                          <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-600 rounded-full" />
+                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full border-2 border-amber-500 animate-pulse" />
                         )}
                       </button>
                     );
                   })}
                 </div>
-                <span className="w-6 text-center text-xs font-bold text-neutral-600">{rowLabel}</span>
+                <span className="w-8 text-center text-sm font-black text-neutral-500">{rowLabel}</span>
               </div>
             );
           })}
@@ -309,40 +318,61 @@ const SeatSelection: React.FC = () => {
       </div>
 
       {/* Right side: Summary */}
-      <div className="w-full lg:w-96 space-y-6">
-        <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6 shadow-2xl sticky top-24">
-          <div className="space-y-4 mb-6">
-            <h2 className="text-xl font-bold text-green-500 leading-tight uppercase">
+      <div className="w-full lg:w-[480px] space-y-6">
+        <div className="bg-neutral-900 rounded-[2.5rem] border border-neutral-800 p-8 shadow-2xl sticky top-24 overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 blur-3xl rounded-full -mr-16 -mt-16" />
+          
+          <div className="space-y-6 mb-8 relative z-10">
+            <h2 className="text-3xl font-black text-white italic leading-tight uppercase tracking-tighter group-hover:text-green-500 transition-colors">
               {movie?.nameMovie}
             </h2>
-            <div className="space-y-1 text-sm text-neutral-400">
-              <p>
-                {showtime && format(new Date(showtime.showTime), 'HH:mm')} - {showtime && format(new Date(showtime.showTime), 'EEEE, dd/MM/yyyy', { locale: vi })}
-              </p>
-              <p>Aireak Cinema Hà Nội - {showtime?.idRoom} - Hà Nội</p>
+            <div className="space-y-3 text-base text-neutral-400 font-medium">
+              <div className="flex items-center gap-3">
+                <Clock className="w-5 h-5 text-green-500" />
+                <span>
+                  {showtime && format(new Date(showtime.showTime), 'HH:mm')} — {showtime && format(new Date(showtime.showTime), 'EEEE, dd/MM', { locale: vi })}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <MapPin className="w-5 h-5 text-green-500" />
+                <span>Aireak Cinema — {showtime?.idRoom}</span>
+              </div>
             </div>
           </div>
 
-          <div className="border-t border-neutral-800 pt-6 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 bg-neutral-800/50 px-3 py-2 rounded">
-              ĐƠN HÀNG CỦA BẠN
+          <div className="border-t border-neutral-800 pt-8 space-y-6 relative z-10">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-neutral-500 bg-neutral-800/50 px-4 py-2 rounded-lg w-fit">
+              CHI TIẾT ĐƠN HÀNG
             </h3>
             
-            <div className="space-y-3">
+            <div className="space-y-6">
               {selectedSeats.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                  <p className="text-sm font-medium text-green-500">
-                    {selectedSeats.map(s => `${s.row}${s.column}`).join(', ')}
-                  </p>
-                  <div className="flex justify-between items-center text-lg font-bold">
-                    <span>Tổng cộng:</span>
-                    <span className="text-green-500">{calculateTotal().toLocaleString('vi-VN')}đ</span>
+                <div className="space-y-6">
+                  <div className="flex flex-wrap gap-2">
+                    {selectedSeats.map(s => (
+                      <span key={s.id} className="px-4 py-2 bg-green-500/10 border border-green-500/20 text-green-500 rounded-xl font-black italic text-sm">
+                        {s.row}{s.column}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="pt-6 border-t border-dashed border-neutral-800 flex justify-between items-end">
+                    <div className="space-y-1">
+                      <span className="text-xs text-neutral-500 font-black uppercase tracking-widest">Tổng cộng</span>
+                      <div className="text-4xl font-black text-green-500 italic tracking-tighter">
+                        {calculateTotal().toLocaleString('vi-VN')}đ
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-neutral-500 italic text-center py-4">
-                  Vui lòng chọn ghế để tiếp tục
-                </p>
+                <div className="py-10 text-center space-y-4">
+                  <div className="w-16 h-16 bg-neutral-800 rounded-full flex items-center justify-center mx-auto text-neutral-600">
+                    <TicketIcon className="w-8 h-8" />
+                  </div>
+                  <p className="text-sm text-neutral-500 font-bold italic">
+                    Vui lòng chọn ghế để tiếp tục
+                  </p>
+                </div>
               )}
             </div>
           </div>
@@ -350,7 +380,7 @@ const SeatSelection: React.FC = () => {
           <button
             disabled={selectedSeats.length === 0 || isLoading}
             onClick={handleBooking}
-            className="w-full mt-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-neutral-800 disabled:text-neutral-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-green-600/20 active:scale-95 flex items-center justify-center gap-2"
+            className="w-full mt-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-neutral-800 disabled:text-neutral-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-green-600/10 active:scale-95 flex items-center justify-center gap-2"
           >
             {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Xác nhận đặt vé'}
           </button>

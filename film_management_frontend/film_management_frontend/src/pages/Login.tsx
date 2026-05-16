@@ -26,7 +26,7 @@ const Login: React.FC = () => {
         let errorMessage = 'Đã có lỗi xảy ra';
 
         if (rawError === 'Account was disable!') {
-          errorMessage = 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.';
+          errorMessage = 'Tài khoản của bạn đã bị khóa.';
         } else if (rawError === 'Email hoặc mật khẩu không chính xác') {
           errorMessage = rawError;
         }

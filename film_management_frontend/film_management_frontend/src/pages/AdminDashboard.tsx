@@ -1,23 +1,17 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Ticket, DollarSign, 
   TrendingUp, Calendar, Clock
 } from 'lucide-react';
 import { movieService } from '../services/movie.service';
-import { bookingService } from '../services/ticket.service';
-import { type Bill } from '../types';
+import { type DashboardStatsResponse } from '../types';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+  PieChart, Pie
+} from 'recharts';
 
 const AdminDashboard: React.FC = () => {
-  const [data, setData] = useState<{
-    bills: Bill[];
-    showtimes: any[];
-    allMovies: any[];
-  }>({
-    bills: [],
-    showtimes: [],
-    allMovies: []
-  });
-
+  const [stats, setStats] = useState<DashboardStatsResponse | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -25,78 +19,28 @@ const AdminDashboard: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(true);
 
+  const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#a855f7'];
+
   useEffect(() => {
-    const fetchInitialData = async () => {
+    const fetchStats = async () => {
       try {
         setIsLoading(true);
-        const [showtimesData, bills, moviesData] = await Promise.all([
-          movieService.getAllShowtimes(0, 1000, 'all'),
-          bookingService.getAllBills(),
-          movieService.getPageMovies(0, 100)
-        ]);
-
-        setData({
-          bills,
-          showtimes: showtimesData.data || [],
-          allMovies: moviesData.data || []
-        });
-
+        const [year, month] = selectedMonth.split('-').map(Number);
+        const statsData = await movieService.getDashboardStats(month, year);
+        setStats(statsData);
       } catch (error) {
         console.error('Dashboard error:', error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchInitialData();
-  }, []);
-
-  const monthlyStats = useMemo(() => {
-    const [year, month] = selectedMonth.split('-').map(Number);
-
-    const filteredBills = data.bills.filter(bill => {
-      const date = new Date(bill.createdAt);
-      return date.getFullYear() === year && (date.getMonth() + 1) === month;
-    });
-
-    const filteredShowtimes = data.showtimes.filter(st => {
-      const date = new Date(st.showTime);
-      return date.getFullYear() === year && (date.getMonth() + 1) === month;
-    });
-
-    const uniqueMoviesInMonth = new Set(filteredShowtimes.map(st => st.idMovie));
-
-    // Thống kê khung giờ xem nhiều nhất dựa trên hóa đơn
-    const timeSlotCounts: Record<string, number> = {
-      'Sáng (08:00 - 12:00)': 0,
-      'Chiều (12:00 - 17:00)': 0,
-      'Tối (17:00 - 22:00)': 0,
-      'Khuya (22:00 - 01:00)': 0
-    };
-
-    filteredBills.forEach(bill => {
-      const hour = new Date(bill.createdAt).getHours();
-      if (hour >= 8 && hour < 12) timeSlotCounts['Sáng (08:00 - 12:00)']++;
-      else if (hour >= 12 && hour < 17) timeSlotCounts['Chiều (12:00 - 17:00)']++;
-      else if (hour >= 17 && hour < 22) timeSlotCounts['Tối (17:00 - 22:00)']++;
-      else timeSlotCounts['Khuya (22:00 - 01:00)']++;
-    });
-
-    const sortedTimeSlots = Object.entries(timeSlotCounts)
-      .sort(([, a], [, b]) => b - a)
-      .map(([label, count]) => ({ label, count }));
-
-    return {
-      activeMovies: uniqueMoviesInMonth.size,
-      bookings: filteredBills.length,
-      revenue: filteredBills.reduce((sum, b) => sum + b.totalAmount, 0),
-      topTimeSlots: sortedTimeSlots
-    };
-  }, [data, selectedMonth]);
+    fetchStats();
+  }, [selectedMonth]);
 
   const statCards = [
-    { label: 'Số phim chiếu', value: monthlyStats.activeMovies, icon: Calendar, color: 'text-blue-500', bgColor: 'bg-blue-500/10' },
-    { label: 'Vé đã đặt', value: monthlyStats.bookings, icon: Ticket, color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
-    { label: 'Tổng doanh thu', value: `${monthlyStats.revenue.toLocaleString()}đ`, icon: DollarSign, color: 'text-green-500', bgColor: 'bg-green-500/10' },
+    { label: 'Số phim chiếu', value: stats?.totalMovies || 0, icon: Calendar, color: 'text-blue-500', bgColor: 'bg-blue-500/10' },
+    { label: 'Vé đã đặt', value: stats?.totalTickets || 0, icon: Ticket, color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
+    { label: 'Tổng doanh thu', value: `${(stats?.totalRevenue || 0).toLocaleString()}đ`, icon: DollarSign, color: 'text-green-500', bgColor: 'bg-green-500/10' },
   ];
 
   return (
@@ -108,7 +52,6 @@ const AdminDashboard: React.FC = () => {
           <h1 className="text-4xl font-black text-white italic uppercase tracking-tighter flex items-center gap-3">
             <TrendingUp className="w-10 h-10 text-green-500" /> Dashboard
           </h1>
-          <p className="text-neutral-400 mt-2 font-medium">Thống kê hoạt động kinh doanh theo thời gian</p>
         </div>
         <div className="relative z-10 flex flex-col gap-2 w-full lg:w-auto">
           <label className="text-xs font-black text-neutral-500 uppercase tracking-[0.2em] ml-1">Chọn thời gian thống kê</label>
@@ -134,7 +77,7 @@ const AdminDashboard: React.FC = () => {
               <div className={`p-4 rounded-2xl ${card.bgColor} group-hover:scale-110 transition-transform`}>
                 <card.icon className={`w-7 h-7 ${card.color}`} />
               </div>
-              <div className="text-[10px] font-black text-neutral-600 uppercase tracking-widest bg-neutral-800 px-3 py-1 rounded-full border border-neutral-700">Tháng {selectedMonth.split('-')[1]}</div>
+              <div className="text-xs font-black text-green-500 uppercase tracking-widest bg-green-500/10 px-4 py-1.5 rounded-full border border-green-500/20 shadow-[0_0_15px_-3px_rgba(34,197,94,0.2)]">Tháng {selectedMonth.split('-')[1]}</div>
             </div>
             <div className="relative z-10">
               <p className="text-neutral-500 text-sm font-bold uppercase tracking-wider">{card.label}</p>
@@ -145,68 +88,90 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Phim xem nhiều nhất */}
+        {/* Phim xem nhiều nhất Chart */}
         <div className="bg-neutral-900 rounded-[2.5rem] border border-neutral-800 p-10 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-64 h-64 bg-green-500/5 blur-[100px] -ml-32 -mt-32 rounded-full" />
           <h3 className="text-2xl font-black text-white mb-8 flex items-center gap-3 relative z-10 italic uppercase tracking-tighter">
             <TrendingUp className="w-6 h-6 text-green-500" /> Phim xem nhiều nhất
           </h3>
-          <div className="space-y-8 relative z-10">
-            {[1, 2, 3, 4, 5].map((_, i) => (
-              <div key={i} className="flex items-center gap-6 group/item">
-                <div className="w-20 h-24 rounded-2xl bg-neutral-800 flex-shrink-0 overflow-hidden border border-neutral-700 group-hover/item:border-green-500/50 transition-all shadow-lg">
-                   <div className="w-full h-full bg-neutral-700 animate-pulse" />
-                </div>
-                <div className="flex-grow">
-                  <div className="flex justify-between items-end mb-2">
-                    <p className="text-lg font-black text-white uppercase italic tracking-tighter group-hover/item:text-green-500 transition-colors">Avatar: The Way of Water</p>
-                    <span className="text-sm font-black text-green-500 italic">{(2500 - i * 400).toLocaleString()} vé</span>
-                  </div>
-                  <div className="w-full bg-neutral-800/50 h-3 rounded-full overflow-hidden border border-neutral-700/30">
-                    <div 
-                      className="bg-gradient-to-r from-green-600 to-green-400 h-full rounded-full transition-all duration-1000 ease-out" 
-                      style={{ width: `${90 - i * 15}%` }} 
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="h-[400px] w-full relative z-10">
+            {stats?.topMovies && stats.topMovies.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.topMovies} layout="vertical" margin={{ left: 20, right: 30, top: 10, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#333" horizontal={false} />
+                  <XAxis type="number" hide />
+                  <YAxis 
+                    dataKey="movieName" 
+                    type="category" 
+                    width={180} 
+                    tick={{ fill: '#fff', fontSize: 15, fontWeight: '900' }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip 
+                    cursor={{ fill: 'transparent' }}
+                    contentStyle={{ backgroundColor: '#171717', border: '1px solid #333', borderRadius: '12px' }}
+                    itemStyle={{ color: '#22c55e', fontWeight: 'bold' }}
+                  />
+                  <Bar dataKey="ticketCount" radius={[0, 10, 10, 0]} barSize={30}>
+                    {stats.topMovies.map((movie, index) => (
+                      <Cell key={`cell-${movie.idMovie}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-neutral-500 italic">Không có dữ liệu phim</div>
+            )}
           </div>
         </div>
 
-        {/* Khung giờ phổ biến */}
+        {/* Khung giờ phổ biến Chart */}
         <div className="bg-neutral-900 rounded-[2.5rem] border border-neutral-800 p-10 shadow-2xl relative overflow-hidden">
           <div className="absolute bottom-0 right-0 w-64 h-64 bg-green-500/5 blur-[100px] -mr-32 -mb-32 rounded-full" />
           <h3 className="text-2xl font-black text-white mb-8 flex items-center gap-3 relative z-10 italic uppercase tracking-tighter">
             <Clock className="w-6 h-6 text-green-500" /> Khung giờ phổ biến
           </h3>
-          <div className="grid grid-cols-1 gap-6 relative z-10">
-            {monthlyStats.topTimeSlots.map((slot, i) => (
-              <div key={i} className={`flex flex-col p-6 rounded-3xl border transition-all ${i === 0 ? 'bg-green-500/10 border-green-500/30 shadow-lg shadow-green-500/5' : 'bg-neutral-800/30 border-neutral-700/50 hover:border-neutral-600'}`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${i === 0 ? 'bg-green-500 text-neutral-900' : 'bg-neutral-800 text-neutral-500'}`}>
-                      <Clock className="w-6 h-6" />
+          <div className="h-[400px] w-full relative z-10 flex flex-col items-center">
+            {stats?.topTimeSlots && stats.topTimeSlots.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height="70%">
+                  <PieChart>
+                    <Pie
+                      data={stats.topTimeSlots}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={80}
+                      outerRadius={120}
+                      paddingAngle={5}
+                      dataKey="count"
+                      nameKey="label"
+                    >
+                      {stats.topTimeSlots.map((slot, index) => (
+                        <Cell key={`cell-${slot.count}`} fill={COLORS[index % COLORS.length]} stroke="none" />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#171717', border: '1px solid #333', borderRadius: '12px' }}
+                      itemStyle={{ color: '#fff' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="grid grid-cols-2 gap-4 mt-6 w-full px-4">
+                  {stats.topTimeSlots.map((slot, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="w-4 h-4 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                      <div className="flex flex-col">
+                        <span className="text-xs text-neutral-300 font-black uppercase tracking-wider">{slot.label}</span>
+                        <span className="text-sm text-white font-black">{slot.count} vé</span>
+                      </div>
                     </div>
-                    <div>
-                      <p className={`text-lg font-black uppercase italic tracking-tight ${i === 0 ? 'text-white' : 'text-neutral-400'}`}>{slot.label}</p>
-                      <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest mt-0.5">{slot.count} giao dịch thành công</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className={`text-2xl font-black italic ${i === 0 ? 'text-green-500' : 'text-neutral-600'}`}>
-                      {monthlyStats.bookings > 0 ? Math.round((slot.count / monthlyStats.bookings) * 100) : 0}%
-                    </span>
-                  </div>
+                  ))}
                 </div>
-                <div className="w-full bg-neutral-950/50 h-3 rounded-full overflow-hidden border border-neutral-800">
-                  <div 
-                    className={`h-full rounded-full transition-all duration-1000 ease-out ${i === 0 ? 'bg-gradient-to-r from-green-600 to-green-400' : 'bg-neutral-700'}`} 
-                    style={{ width: `${monthlyStats.bookings > 0 ? (slot.count / monthlyStats.bookings) * 100 : 0}%` }} 
-                  />
-                </div>
-              </div>
-            ))}
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-full text-neutral-500 italic">Không có dữ liệu khung giờ</div>
+            )}
           </div>
         </div>
       </div>

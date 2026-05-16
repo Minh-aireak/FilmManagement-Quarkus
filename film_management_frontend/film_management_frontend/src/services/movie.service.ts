@@ -1,12 +1,13 @@
 import api from './api';
-import { type MovieRequest, type Movie, type Showtime, type ApiResponse, type Category, type PageResponse, type Room, type AddShowtimeRequest } from '../types';
+import { type MovieRequest, type Movie, type Showtime, type ApiResponse, type Category, type PageResponse, type Room, type AddShowtimeRequest, type DashboardStatsResponse } from '../types';
 
 export const movieService = {
-  getPageMovies: async (page: number, size: number) => {
+  getPageMovies: async (page: number, size: number, category?: string) => {
     const response = await api.get<ApiResponse<PageResponse<Movie[]>>>('/movies', {
     params: {
       page,
-      size
+      size,
+      category
     }
   });
     return response.data.result;
@@ -32,12 +33,15 @@ export const movieService = {
     return response.data.result;
   },
 
-  getAllShowtimes: async (page: number, size: number, status: string = 'upcoming') => {
+  getAllShowtimes: async (page: number, size: number, status: string = 'upcoming', movieId?: string, date?: string, roomId?: string) => {
     const response = await api.get<ApiResponse<PageResponse<Showtime[]>>>('/showtimes', {
     params: {
       page,
       size,
-      status
+      status,
+      movieId,
+      date,
+      roomId
     }
   });
     return response.data.result;
@@ -109,6 +113,13 @@ export const movieService = {
       '/images/upload',
       formData
     );
+    return response.data.result;
+  },
+
+  getDashboardStats: async (month: number, year: number) => {
+    const response = await api.get<ApiResponse<DashboardStatsResponse>>('/stats/dashboard', {
+      params: { month, year }
+    });
     return response.data.result;
   }
 };

@@ -4,7 +4,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.Router;
@@ -32,10 +31,6 @@ public class ApiGateway {
         httpClient = vertx.createHttpClient(options);
     }
 
-    /**
-     * Register routes directly with Vert.x Router
-     * DO NOT use @Route for streaming proxy
-     */
     void setupRoutes(@Observes Router router) {
 
         // Identity Service
@@ -59,6 +54,9 @@ public class ApiGateway {
                 .handler(ctx -> forward(ctx, 8081, "Movie"));
 
         router.route("/rooms/*")
+                .handler(ctx -> forward(ctx, 8081, "Movie"));
+
+        router.route("/stats/*")
                 .handler(ctx -> forward(ctx, 8081, "Movie"));
 
         // Ticket Service
@@ -95,8 +93,6 @@ public class ApiGateway {
 
             handleProxyResponse(context, proxyRequest, serviceName);
 
-            // STREAM request body directly
-            // No buffering in RAM
             context.request()
                     .pipeTo(proxyRequest)
                     .onFailure(error -> fail(context, serviceName, error));
@@ -160,9 +156,6 @@ public class ApiGateway {
         }).onFailure(error -> fail(context, serviceName, error));
     }
 
-    /**
-     * Remove only hop-by-hop headers
-     */
     private boolean isHopByHopHeader(String name) {
 
         return HttpHeaders.HOST.toString().equalsIgnoreCase(name)

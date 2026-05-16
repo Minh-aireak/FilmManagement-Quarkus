@@ -1,5 +1,5 @@
 import api from './api';
-import { type BookingResponseDTO, type BookingRequest, type Bill } from '../types';
+import { type BookingResponseDTO, type BookingRequest, type Bill, type PageResponse, type AdminBillResponse } from '../types';
 
 export const bookingService = {
 
@@ -30,8 +30,16 @@ export const bookingService = {
     return response.data;
   },
 
-  getAllBills: async () => {
-    const response = await api.get<Bill[]>('/tickets/admin/bills');
+  getAllBills: async (page: number, size: number, searchTerm?: string, idMovie?: string, idShowtime?: string) => {
+    const response = await api.get<PageResponse<AdminBillResponse[]>>('/tickets/admin/bills', {
+      params: { 
+        page, 
+        size,
+        searchTerm: searchTerm || undefined,
+        idMovie: idMovie !== 'all' ? idMovie : undefined,
+        idShowtime: idShowtime !== 'all' ? idShowtime : undefined
+      }
+    });
     return response.data;
   },
 };
