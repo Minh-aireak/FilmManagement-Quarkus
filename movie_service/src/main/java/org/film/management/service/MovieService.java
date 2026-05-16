@@ -148,7 +148,7 @@ public class MovieService {
         if (showtime == null) throw new RuntimeException("Lịch chiếu không tồn tại");
         long ticketCount = ticketRepository.find("idShowtime", idShowtime).count();
         if (ticketCount > 0) {
-            throw new RuntimeException("Không thể xóa lịch chiếu vì đã có vé được bán. Hãy hủy các hóa đơn liên quan trước!");
+            throw new AppException(ErrorCode.DELETE_SHOWTIME);
         }
         showtimeSeatRepository.delete("idShowtime", idShowtime);
         showtimePriceRepository.deleteById(idShowtime);

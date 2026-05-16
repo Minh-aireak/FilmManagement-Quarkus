@@ -55,6 +55,12 @@ public class ApiGateway {
         router.route("/images/*")
                 .handler(ctx -> forward(ctx, 8081, "Movie"));
 
+        router.route("/showtimes/*")
+                .handler(ctx -> forward(ctx, 8081, "Movie"));
+
+        router.route("/rooms/*")
+                .handler(ctx -> forward(ctx, 8081, "Movie"));
+
         // Ticket Service
         router.route("/bookings/*")
                 .handler(ctx -> forward(ctx, 8082, "Ticket"));

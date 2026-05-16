@@ -24,10 +24,10 @@ public class AccountController {
     }
 
     @GET
-    @Path("/{idAccount}")
+    @Path("/my-profile")
     @RolesAllowed({"ADMIN", "CUSTOMER"})
-    public Account getAccount(@PathParam("idAccount") String idAccount) {
-        return accountService.getById(idAccount);
+    public Account getAccount() {
+        return accountService.getById();
     }
 
     @PUT

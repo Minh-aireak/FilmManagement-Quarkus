@@ -5,19 +5,13 @@ import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-
-import jakarta.ws.rs.core.Response;
-import org.film.management.dto.request.AddShowtimeRequest;
 import org.film.management.dto.request.MovieRequest;
 import org.film.management.dto.response.ApiResponse;
 import org.film.management.dto.response.PageResponse;
 import org.film.management.entity.Movie;
-import org.film.management.entity.Showtime;
 import org.film.management.exception.AppException;
 import org.film.management.exception.ErrorCode;
 import org.film.management.service.MovieService;
-
-import java.util.List;
 
 @Path("/movies")
 @Produces(MediaType.APPLICATION_JSON)
@@ -40,15 +34,6 @@ public class MovieController {
     }
 
     @GET
-    @Path("/showtimes/{idMovie}")
-    public ApiResponse<List<Showtime>> getShowtimesByMovie(@PathParam("idMovie") String idMovie) {
-        return ApiResponse.<List<Showtime>>builder()
-                .message("Get showtime successfully!")
-                .result(movieService.getShowtimesByMovie(idMovie))
-                .build();
-    }
-
-    @GET
     @Path("/date/{date}")
     public ApiResponse<PageResponse<Movie>> getMoviesByDate(
             @PathParam("date") String date,
@@ -59,38 +44,6 @@ public class MovieController {
                     .result(movieService.getMoviesByDate(date, page, size))
                     .build();
     }
-
-    @GET
-    @Path("/showtimes")
-    public ApiResponse<PageResponse<Showtime>> getAllShowtimes(
-            @QueryParam("page") @DefaultValue("0") int page,
-            @QueryParam("size") @DefaultValue("10") int size) {
-        return ApiResponse.<PageResponse<Showtime>>builder()
-                .message("Get all showtimes successfully!")
-                .result(movieService.getAllShowtimes(page, size))
-                .build();
-    }
-
-    @POST
-    @Path("/showtimes")
-    @RolesAllowed("ADMIN")
-    public ApiResponse<Showtime> createShowtime(AddShowtimeRequest request) {
-        return ApiResponse.<Showtime>builder()
-                .message("Thêm lịch chiếu thành công!")
-                .result(movieService.createShowtime(request))
-                .build();
-    }
-
-    @DELETE
-    @Path("/showtimes/{idShowtime}")
-    @RolesAllowed("ADMIN")
-    public ApiResponse<Void> createShowtime(@PathParam("idShowtime") String idShowtime) {
-        movieService.deleteShowtime(idShowtime);
-        return ApiResponse.<Void>builder()
-                .message("Xóa lịch chiếu thành công!")
-                .build();
-    }
-
 
     @GET
     @Path("/{idMovie}")

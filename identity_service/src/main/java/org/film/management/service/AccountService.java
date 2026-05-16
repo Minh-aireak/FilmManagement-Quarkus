@@ -77,8 +77,8 @@ public class AccountService {
         return accountRepository.listAll();
     }
 
-    public Account getById(String id) {
-        return accountRepository.findById(id);
+    public Account getById() {
+        return accountRepository.findById(getCurrentId());
     }
 
     @Transactional
@@ -91,6 +91,8 @@ public class AccountService {
             entity.setFirstName(updatedData.getFirstName());
             entity.setLastName(updatedData.getLastName());
             entity.setPhone(updatedData.getPhone());
+            entity.setDateOfBirth(updatedData.getDateOfBirth());
+            entity.setAddress(updatedData.getAddress());
             entity.setGender(updatedData.getGender());
         }
         return entity;

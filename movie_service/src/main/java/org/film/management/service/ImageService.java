@@ -1,51 +1,47 @@
 package org.film.management.service;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.film.management.exception.AppException;
 import org.film.management.exception.ErrorCode;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.util.UUID;
+import java.util.Map;
 
 @ApplicationScoped
 public class ImageService {
 
-    private static final String UPLOAD_DIR = "uploads/";
+    @ConfigProperty(name = "cloudinary.cloud-name")
+    String cloudName;
+
+    @ConfigProperty(name = "cloudinary.api-key")
+    String apiKey;
+
+    @ConfigProperty(name = "cloudinary.api-secret")
+    String apiSecret;
+
+    private Cloudinary cloudinary;
+
+    @PostConstruct
+    void init() {
+        cloudinary = new Cloudinary(ObjectUtils.asMap(
+                "cloud_name", cloudName,
+                "api_key", apiKey,
+                "api_secret", apiSecret,
+                "secure", true
+        ));
+    }
 
     public String upload(FileUpload file) {
-
-        File dir = new File(UPLOAD_DIR);
-
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
-
-        String extension = "";
-
-        if (file.fileName().contains(".")) {
-            extension = file.fileName()
-                    .substring(file.fileName().lastIndexOf("."));
-        }
-
-        String newName = UUID.randomUUID()
-                .toString()
-                .substring(0, 8) + extension;
-
-        File dest = new File(UPLOAD_DIR + newName);
-
         try {
-            Files.copy(
-                    file.uploadedFile(),
-                    dest.toPath()
-            );
-
+            Map uploadResult = cloudinary.uploader().upload(file.uploadedFile().toFile(), ObjectUtils.emptyMap());
+            return (String) uploadResult.get("secure_url");
         } catch (IOException e) {
             throw new AppException(ErrorCode.UPLOAD_ERROR);
         }
-
-        return "http://localhost:8081/static/" + newName;
     }
 }
