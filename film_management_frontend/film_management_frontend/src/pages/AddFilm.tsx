@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Save, Loader2, Image as ImageIcon, Film as MovieIcon, Clock, Languages, User, Users, Tag, X, Check, Upload } from 'lucide-react';
+import { ChevronLeft, Save, Loader2, AlertCircle, Image as ImageIcon, Film as MovieIcon, Clock, Languages, User, Users, Tag, X, Check, Upload } from 'lucide-react';
 import { movieService } from '../services/movie.service';
 import { useToast } from '../components/Toast';
 import { useCache } from '../context/CacheContext';
@@ -27,7 +27,6 @@ const AddFilm: React.FC = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -49,7 +48,6 @@ const AddFilm: React.FC = () => {
 
   const fetchFilmDetails = async () => {
     try {
-      setIsFetching(true);
       const movie = await movieService.getMovieById(id!);
       setFormData({
         idMovie: movie.idMovie,
@@ -66,8 +64,6 @@ const AddFilm: React.FC = () => {
       const message = 'Không thể tải thông tin phim.';
       setError(message);
       showToast(message, 'error');
-    } finally {
-      setIsFetching(false);
     }
   };
 
@@ -164,15 +160,6 @@ const AddFilm: React.FC = () => {
     }
   };
 
-  if (isFetching) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-12 h-12 text-green-500 animate-spin" />
-        <p className="mt-4 text-neutral-400">Đang tải thông tin phim...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="flex items-center justify-between">
@@ -267,7 +254,7 @@ const AddFilm: React.FC = () => {
           <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-8 shadow-2xl space-y-6">
             {error && (
               <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm flex items-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <AlertCircle className="w-5 h-5" />
                 {error}
               </div>
             )}

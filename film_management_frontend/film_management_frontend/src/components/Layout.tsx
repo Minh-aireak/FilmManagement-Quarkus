@@ -3,9 +3,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Film, LogOut, User as UserIcon, Shield, 
   LayoutDashboard, Clapperboard, Tags, Calendar, 
-  Ticket, Users, Menu, X, ChevronRight, Bell
+  Ticket, Users, Menu, X, ChevronRight
 } from 'lucide-react';
-import { authService } from '../services/auth.service';
 import { useAuth } from '../context/AuthContext';
 import { useCache } from '../context/CacheContext';
 import { useToast } from './Toast';
@@ -46,8 +45,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <div className="p-6 flex items-center justify-between">
             {isSidebarOpen && (
               <Link to="/" className="flex items-center space-x-2 text-green-500">
-                <Film className="w-8 h-8" />
-                <span className="text-xl font-black italic tracking-tighter">ADMIN</span>
+                <Film className="w-8 h-8 text-green-500" />
+                <span className="text-xl font-black italic tracking-tighter">Aireak Cinema</span>
               </Link>
             )}
             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 hover:bg-neutral-800 rounded-lg transition-colors">
@@ -91,16 +90,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <div className="flex-grow flex flex-col">
           <header className="h-16 border-b border-neutral-800 bg-neutral-900/30 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-40">
             <div className="flex items-center space-x-4">
-              <h2 className="text-lg font-bold text-white">
-                {adminMenuItems.find(m => m.path === location.pathname)?.label || 'Quản trị hệ thống'}
-              </h2>
             </div>
             
             <div className="flex items-center space-x-6">
-              <button className="p-2 text-neutral-400 hover:text-white transition-colors relative">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
               <Link to="/profile" className="flex items-center space-x-3 pl-6 border-l border-neutral-800 group transition-all">
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-bold text-white leading-none group-hover:text-green-500 transition-colors">{user.nameDisplay}</p>

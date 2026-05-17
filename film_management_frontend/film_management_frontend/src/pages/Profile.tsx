@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { User, Mail, Phone, MapPin, Calendar, Fingerprint, Loader2, Save, Shield, UserCircle } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, Loader2, Save, Shield, UserCircle } from 'lucide-react';
 import { authService } from '../services/auth.service';
 import { type Account } from '../types';
 import { useToast } from '../components/Toast';
 import { useCache } from '../context/CacheContext';
-import { format } from 'date-fns';
 
 const Profile: React.FC = () => {
   const [account, setAccount] = useState<Account | null>(null);

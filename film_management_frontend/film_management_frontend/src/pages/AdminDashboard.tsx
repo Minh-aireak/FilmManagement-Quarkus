@@ -54,7 +54,6 @@ const AdminDashboard: React.FC = () => {
           </h1>
         </div>
         <div className="relative z-10 flex flex-col gap-2 w-full lg:w-auto">
-          <label className="text-xs font-black text-neutral-500 uppercase tracking-[0.2em] ml-1">Chọn thời gian thống kê</label>
           <div className="flex items-center gap-3 bg-neutral-800/80 backdrop-blur-xl p-4 rounded-2xl border border-neutral-700/50 hover:border-green-500/50 transition-all shadow-inner group/input">
             <Calendar className="w-5 h-5 text-green-500 group-hover/input:scale-110 transition-transform" />
             <input 
@@ -112,8 +111,10 @@ const AdminDashboard: React.FC = () => {
                     cursor={{ fill: 'transparent' }}
                     contentStyle={{ backgroundColor: '#171717', border: '1px solid #333', borderRadius: '12px' }}
                     itemStyle={{ color: '#22c55e', fontWeight: 'bold' }}
+                    formatter={(value: any) => [value, 'Số vé đã bán']}
+                    labelStyle={{ color: '#fff', marginBottom: '4px' }}
                   />
-                  <Bar dataKey="ticketCount" radius={[0, 10, 10, 0]} barSize={30}>
+                  <Bar dataKey="ticketCount" name="Số vé đã bán" radius={[0, 10, 10, 0]} barSize={30}>
                     {stats.topMovies.map((movie, index) => (
                       <Cell key={`cell-${movie.idMovie}`} fill={COLORS[index % COLORS.length]} />
                     ))}

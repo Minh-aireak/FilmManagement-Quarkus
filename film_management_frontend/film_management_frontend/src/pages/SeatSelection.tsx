@@ -9,7 +9,7 @@ import { type Showtime, type Seat, type Movie, type BookingResponseDTO } from '.
 import { useToast } from '../components/Toast';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { CheckCircle2, Ticket as TicketIcon, Calendar, Clock, MapPin, X, ChevronRight, Loader2 } from 'lucide-react';
+import { CheckCircle2, Ticket as TicketIcon, Calendar, Clock, MapPin, X, Loader2 } from 'lucide-react';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
