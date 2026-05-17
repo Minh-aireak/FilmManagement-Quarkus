@@ -88,28 +88,28 @@ const History: React.FC = () => {
           bills.map((bill) => (
             <div key={bill.idBill} className="bg-neutral-900 rounded-2xl border border-neutral-800 overflow-hidden hover:border-neutral-700 transition-all shadow-xl">
               <div className="p-6">
-                <div className="flex flex-col md:flex-row justify-between gap-6">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                   {/* Bill Info */}
-                  <div className="space-y-4 flex-grow">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center text-green-500">
-                          <Ticket className="w-4 h-4" />
-                        </div>
-                        <span className="text-xs font-mono text-neutral-500 uppercase">Mã đơn: {bill.idBill}</span>
+                  <div className="space-y-4 flex-grow w-full md:w-auto">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center text-green-500">
+                        <Ticket className="w-4 h-4" />
                       </div>
-                      <span className="text-sm font-bold text-green-500 flex items-center gap-2">
-                        <CreditCard className="w-4 h-4" />
-                        {bill.totalAmount.toLocaleString('vi-VN')}đ
-                      </span>
+                      <span className="text-xs font-mono text-neutral-500 uppercase">Mã đơn: {bill.idBill}</span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="flex items-center gap-3 text-sm text-neutral-400">
-                        <Calendar className="w-4 h-4 text-neutral-500" />
-                        <span>Ngày đặt: {format(new Date(bill.createdAt), 'dd/MM/yyyy HH:mm', { locale: vi })}</span>
-                      </div>
+                    <div className="flex items-center gap-3 text-sm text-neutral-400">
+                      <Calendar className="w-4 h-4 text-neutral-500" />
+                      <span>Ngày đặt: {format(new Date(bill.createdAt), 'dd/MM/yyyy HH:mm', { locale: vi })}</span>
                     </div>
+                  </div>
+
+                  {/* Price - Centered vertically */}
+                  <div className="flex items-center">
+                    <span className="text-sm font-bold text-green-500 flex items-center gap-2 whitespace-nowrap">
+                      <CreditCard className="w-4 h-4" />
+                      {bill.totalAmount.toLocaleString('vi-VN')}đ
+                    </span>
                   </div>
 
                   {/* Actions */}

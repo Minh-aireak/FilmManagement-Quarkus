@@ -167,9 +167,9 @@ const FilmList: React.FC = () => {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        const fetchPromises: [Promise<DashboardStatsResponse> | null, Promise<Category[]> | Category[]] = [
+        const fetchPromises: [Promise<DashboardStatsResponse | null>, Promise<Category[]>] = [
           !hotMoviesCache ? movieService.getDashboardStats(new Date().getMonth() + 1, new Date().getFullYear()) : Promise.resolve(null),
-          categoriesCache || movieService.getCategories()
+          Promise.resolve(categoriesCache || movieService.getCategories())
         ];
 
         const [stats, cats] = await Promise.all(fetchPromises);
