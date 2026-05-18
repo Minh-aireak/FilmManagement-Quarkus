@@ -25,7 +25,7 @@ services:
       - "8080:8080"
     environment:
       - DB_HOST=db
-      - DB_PASSWORD=1801062012
+      - DB_PASSWORD=Hung0901!
       - DB_PORT=3306
       - TZ=Asia/Ho_Chi_Minh
     depends_on:
@@ -42,7 +42,7 @@ services:
       - "8081:8081"
     environment:
       - DB_HOST=db
-      - DB_PASSWORD=1801062012
+      - DB_PASSWORD=Hung0901!
       - DB_PORT=3306
       - TZ=Asia/Ho_Chi_Minh
     depends_on:
@@ -59,7 +59,7 @@ services:
       - "8082:8082"
     environment:
       - DB_HOST=db
-      - DB_PASSWORD=1801062012
+      - DB_PASSWORD=Hung0901!
       - DB_PORT=3306
       - TZ=Asia/Ho_Chi_Minh
     depends_on:

@@ -6,6 +6,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.film.management.dto.BookingRequest;
+import org.film.management.dto.SeatStatusDTO;
 import org.film.management.service.BookingService;
 import io.quarkus.security.Authenticated;
 
@@ -24,6 +25,17 @@ public class BookingController {
         List<String> bookedSeats = bookingService.getBookedSeats(idShowtime);
 
         return Response.ok(bookedSeats).build();
+    }
+
+    @GET
+    @Path("/bookings/seats/status/{idShowtime}")
+    public Response getSeatStatuses(@PathParam("idShowtime") String idShowtime) {
+        try {
+            List<SeatStatusDTO> seats = bookingService.getSeatStatuses(idShowtime);
+            return Response.ok(seats).build();
+        } catch (RuntimeException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+        }
     }
 
     @POST

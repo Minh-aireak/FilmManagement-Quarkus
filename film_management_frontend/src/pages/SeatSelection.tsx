@@ -65,8 +65,9 @@ const SeatSelection: React.FC = () => {
         setIsLoading(true);
         setError(null);
         
-        // 1. Lấy danh sách ghế đã đặt
-        const bookedSeatIds = await bookingService.getBookedSeats(showtimeId);
+        // 1. Lấy danh sách ghế, trạng thái và giá theo suất chiếu
+        const seatStatuses = await bookingService.getSeatStatuses(showtimeId);
+        const seatStatusMap = new Map(seatStatuses.map(seat => [seat.seatCode, seat]));
         
         // 2. Lấy thông tin suất chiếu
         const allShowtimes = await movieService.getAllShowtimes(0, 100);
@@ -121,6 +122,10 @@ const SeatSelection: React.FC = () => {
              }
 
              const seatId = `${row}${seatInRowIndex}`;
+             const seatStatus = seatStatusMap.get(seatId);
+             if (seatStatus) {
+               seatType = seatStatus.typeSeat;
+             }
              
              allSeats.push({
                id: seatId,
@@ -128,7 +133,8 @@ const SeatSelection: React.FC = () => {
                row: row,
                column: seatInRowIndex,
                type: seatType,
-               isBooked: bookedSeatIds.includes(seatId)
+               price: seatStatus?.price ?? 0,
+               isBooked: seatStatus?.status === 'BOOKED'
              });
 
              currentSlot += (seatType === 'COUPLE' ? 2 : 1);
@@ -159,13 +165,7 @@ const SeatSelection: React.FC = () => {
   };
 
   const calculateTotal = () => {
-    return selectedSeats.reduce((total, seat) => {
-      // Giả sử giá cơ bản là 1, bạn có thể thay đổi tùy logic backend
-      let price = 100000; // Giá mặc định nếu không lấy được từ showtime
-      if (seat.type === 'VIP') price += 30000;
-      if (seat.type === 'COUPLE') price += 100000;
-      return total + price;
-    }, 0);
+    return selectedSeats.reduce((total, seat) => total + seat.price, 0);
   };
 
   const handleBooking = async () => {

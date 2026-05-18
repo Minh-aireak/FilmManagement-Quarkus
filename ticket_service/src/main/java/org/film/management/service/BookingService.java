@@ -11,6 +11,7 @@ import org.film.management.dto.AdminBillResponseDTO;
 import org.film.management.dto.BookingRequest;
 import org.film.management.dto.BookingResponseDTO;
 import org.film.management.dto.PageResponse;
+import org.film.management.dto.SeatStatusDTO;
 import org.film.management.entity.*;
 import org.film.management.repository.*;
 
@@ -38,6 +39,28 @@ public class BookingService {
 
         return bookedEntries.stream()
                 .map(s -> s.seatCode) // Sử dụng seatCode
+                .collect(Collectors.toList());
+    }
+
+    public List<SeatStatusDTO> getSeatStatuses(String idShowtime) {
+        Showtime showtime = showtimeRepo.findById(idShowtime);
+        if (showtime == null) throw new RuntimeException("Lá»‹ch chiáº¿u khÃ´ng há»£p lá»‡");
+
+        ShowtimePrice priceConfig = showtimePriceRepo.findById(idShowtime);
+        if (priceConfig == null) throw new RuntimeException("ChÆ°a cáº¥u hÃ¬nh giÃ¡ cho lá»‹ch chiáº¿u nÃ y");
+
+        List<RoomSeat> roomSeats = roomSeatRepo.find("idRoom", showtime.idRoom).list();
+        return roomSeats.stream()
+                .map(roomSeat -> {
+                    ShowtimeSeat showtimeSeat = showtimeSeatRepo.findById(new ShowtimeSeatId(idShowtime, roomSeat.seatCode));
+                    String status = showtimeSeat != null ? showtimeSeat.status : "AVAILABLE";
+                    return new SeatStatusDTO(
+                            roomSeat.seatCode,
+                            roomSeat.typeSeat,
+                            status,
+                            getTicketPrice(roomSeat.typeSeat, priceConfig)
+                    );
+                })
                 .collect(Collectors.toList());
     }
 
@@ -73,10 +96,7 @@ public class BookingService {
             RoomSeat roomSeat = roomSeatRepo.findById(new RoomSeatId(showtime.idRoom, seatCode));
             if (roomSeat == null) throw new RuntimeException("Mã ghế " + seatCode + " không tồn tại trong phòng chiếu");
 
-            int ticketPrice = 0;
-            if ("STANDARD".equals(roomSeat.typeSeat)) ticketPrice = priceConfig.standardPrice;
-            else if ("VIP".equals(roomSeat.typeSeat)) ticketPrice = priceConfig.vipPrice;
-            else if ("COUPLE".equals(roomSeat.typeSeat)) ticketPrice = priceConfig.couplePrice;
+            int ticketPrice = getTicketPrice(roomSeat.typeSeat, priceConfig);
 
             totalAmount += ticketPrice;
 
@@ -100,6 +120,13 @@ public class BookingService {
         bill.totalAmount = totalAmount;
 
         return new BookingResponseDTO(bill, tickets);
+    }
+
+    private int getTicketPrice(String typeSeat, ShowtimePrice priceConfig) {
+        if ("STANDARD".equals(typeSeat)) return priceConfig.standardPrice;
+        if ("VIP".equals(typeSeat)) return priceConfig.vipPrice;
+        if ("COUPLE".equals(typeSeat)) return priceConfig.couplePrice;
+        throw new RuntimeException("Loáº¡i gháº¿ khÃ´ng há»£p lá»‡: " + typeSeat);
     }
 
     public BookingResponseDTO getBillDetail(String idBill) {

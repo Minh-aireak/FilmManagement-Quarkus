@@ -123,6 +123,7 @@ export interface Seat {
   row: string;
   column: number;
   type: 'STANDARD' | 'VIP' | 'COUPLE';
+  price: number;
   isBooked?: boolean;
 }
 
@@ -158,9 +159,10 @@ export interface ShowtimeSeat {
 }
 
 export interface SeatStatusDTO {
-  idSeat: string;
-  typeSeat: string;
+  seatCode: string;
+  typeSeat: 'STANDARD' | 'VIP' | 'COUPLE';
   status: string;
+  price: number;
 }
 
 export interface BookingResponseDTO {

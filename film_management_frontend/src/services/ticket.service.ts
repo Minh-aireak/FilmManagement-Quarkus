@@ -1,10 +1,15 @@
 import api from './api';
-import { type BookingResponseDTO, type BookingRequest, type Bill, type PageResponse, type AdminBillResponse } from '../types';
+import { type BookingResponseDTO, type BookingRequest, type Bill, type PageResponse, type AdminBillResponse, type SeatStatusDTO } from '../types';
 
 export const bookingService = {
 
   getBookedSeats: async (idShowtime: string) => {
     const response = await api.get<string[]>(`/bookings/seats/${idShowtime}`);
+    return response.data;
+  },
+
+  getSeatStatuses: async (idShowtime: string) => {
+    const response = await api.get<SeatStatusDTO[]>(`/bookings/seats/status/${idShowtime}`);
     return response.data;
   },
 
