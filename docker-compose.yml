@@ -5,9 +5,9 @@ services:
     image: mysql:8.0
     container_name: movie_db
     ports:
-      - "3307:3306"
+      - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: 1801062012
+      MYSQL_ROOT_PASSWORD: Hung0901!
       MYSQL_DATABASE: qlphim
       TZ: Asia/Ho_Chi_Minh
     volumes:

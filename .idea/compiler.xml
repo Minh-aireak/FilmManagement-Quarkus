@@ -9,7 +9,7 @@
         <module name="ticket_service" />
         <module name="api_gateway" />
       </profile>
-      <profile name="Annotation profile for movie_service" enabled="true">
+      <profile name="Annotation profile for project-quarkus" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
