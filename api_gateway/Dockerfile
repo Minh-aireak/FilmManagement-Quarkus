@@ -1,5 +1,5 @@
 # Build stage
-FROM maven:3-eclipse-temurin-25 AS build
+FROM maven:3-eclipse-temurin-21 AS build
 WORKDIR /app
 
 # 1. Copy root pom.xml
@@ -21,7 +21,7 @@ COPY api_gateway/src api_gateway/src
 RUN mvn -pl api_gateway package -DskipTests -Dquarkus.profile=prod -Dquarkus.devservices.enabled=false
 
 # Run stage
-FROM eclipse-temurin:25-jre
+FROM eclipse-temurin:21-jre
 WORKDIR /deployments
 COPY --from=build /app/api_gateway/target/quarkus-app/lib/ /deployments/lib/
 COPY --from=build /app/api_gateway/target/quarkus-app/*.jar /deployments/
